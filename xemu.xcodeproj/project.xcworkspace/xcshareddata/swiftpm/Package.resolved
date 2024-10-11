@@ -1,0 +1,24 @@
+{
+  "originHash" : "01f0c87d654aff52381e1c1eb87389d88328533b269d944ac59b1ba9c1b59010",
+  "pins" : [
+    {
+      "identity" : "stylx",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/afrigon/stylx",
+      "state" : {
+        "branch" : "main",
+        "revision" : "6b34ddb7105a357bb5022711209f37e4ffe95636"
+      }
+    },
+    {
+      "identity" : "xkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/afrigon/XKit",
+      "state" : {
+        "branch" : "main",
+        "revision" : "88ccd24987ed279b8f5ee4d398249b2fd46561a3"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -1,0 +1,84 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "Active Controller" : {
+
+    },
+    "All associated data, such as saves and save states, will also be deleted." : {
+
+    },
+    "An unexpected error occurred during initialization." : {
+
+    },
+    "Are you sure you want to delete this game?" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Change Artwork" : {
+
+    },
+    "Clear Database" : {
+
+    },
+    "Clipboard" : {
+
+    },
+    "Controllers" : {
+
+    },
+    "Copy MD5 Hash" : {
+
+    },
+    "Could not open this file, the format provided is unsuported." : {
+
+    },
+    "Debug Settings" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Done" : {
+
+    },
+    "Error" : {
+
+    },
+    "Game Database" : {
+
+    },
+    "Name" : {
+
+    },
+    "No releases found" : {
+
+    },
+    "OK" : {
+
+    },
+    "Rename" : {
+
+    },
+    "Rename Game" : {
+
+    },
+    "Search Games" : {
+
+    },
+    "Settings" : {
+
+    },
+    "Something went wrong while loading remote config." : {
+
+    },
+    "Something went wrong while trying to access the file system." : {
+
+    }
+  },
+  "version" : "1.0"
+}
