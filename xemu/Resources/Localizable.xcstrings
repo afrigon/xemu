@@ -7,6 +7,9 @@
     "Active Controller" : {
 
     },
+    "Add Game" : {
+
+    },
     "All associated data, such as saves and save states, will also be deleted." : {
 
     },
@@ -49,10 +52,25 @@
     "Error" : {
 
     },
+    "Game Collection" : {
+
+    },
     "Game Database" : {
 
     },
+    "Game Title" : {
+
+    },
+    "Import Games" : {
+
+    },
+    "Last Played" : {
+
+    },
     "Name" : {
+
+    },
+    "No Games" : {
 
     },
     "No releases found" : {
@@ -73,10 +91,25 @@
     "Settings" : {
 
     },
+    "Something went wrong while accessing the game database." : {
+
+    },
     "Something went wrong while loading remote config." : {
 
     },
     "Something went wrong while trying to access the file system." : {
+
+    },
+    "Something went wrong while trying to import the file." : {
+
+    },
+    "Sort By" : {
+
+    },
+    "test" : {
+
+    },
+    "Your collection is empty. Import games with the + button to start playing." : {
 
     }
   },

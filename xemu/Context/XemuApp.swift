@@ -1,6 +1,6 @@
 import SwiftUI
 import SwiftData
-import XemuPersistance
+import XemuCore
 
 @main
 struct XemuApp: App {

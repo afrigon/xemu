@@ -1,10 +1,13 @@
 import SwiftUI
-import XemuPersistance
+import stylx
+import XemuCore
 
 struct GameBoxView: View {
+    @Environment(AppContext.self) var context
     @Environment(\.modelContext) var modelContext
     
     private var game: Game
+    
     @State private var name: String
     @State private var artworkURL: URL? = nil
     @State private var renameOpen: Bool = false
@@ -18,25 +21,31 @@ struct GameBoxView: View {
     }
     
     var body: some View {
-        VStack(spacing: .s) {
-            if let artwork = game.artwork {
-                Image(data: artwork)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: 100, maxHeight: 100)
-            } else {
-                GamePlaceholder(console: game.console)
-                    .frame(width: 100, height: 100)
+        Button(action: {
+            game.lastPlayedDate = Date()
+            context.set(state: .gaming(game))
+        }, label: {
+            VStack(spacing: .s) {
+                if let artwork = game.artwork, let image = PlatformImage(data: artwork) {
+                    ImageThatFits(artwork, maxSize: .xxxxxxxl)
+                        .clipShape(RoundedRectangle(cornerRadius: .xxs))
+                } else {
+                    GamePlaceholder(system: game.system)
+                        .frame(width: .xxxxxxxl, height: .xxxxxxxl)
+                }
+                
+                Text(verbatim: game.name)
+                    .retroTextStyle(size: .body)
+                    .foregroundStyle(.foregroundDefault)
+                    .lineLimit(4)
             }
-            
-            Text(game.name)
-                .textStyle(.code(.s))
-                .lineSpacing(.xxs)
-        }
-        .frame(width: 100)
+        })
+        .frame(maxWidth: .xxxxxxxl)
         .padding(.xs)
         .contentShape(RoundedRectangle(cornerRadius: .xs))
         .contextMenu {
+            Text(verbatim: game.name)
+            
             RenameButton()
             
             Button("Change Artwork", systemImage: "photo") {
@@ -46,17 +55,12 @@ struct GameBoxView: View {
 //            ShareLink(items: [game.data])
             
 #if DEBUG
-            Divider()
-            
-            Button("Copy MD5 Hash", systemImage: "clipboard") {
-#if canImport(UIKit)
-                UIPasteboard.general.string = game.id.uppercased()
+            if ClipboardService.canUseClipboard {
+                Divider()
                 
-#elseif canImport(AppKit)
-                let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                pasteboard.setString(game.id.uppercased(), forType: .string)
-#endif
+                Button("Copy MD5 Hash", systemImage: "clipboard") {
+                    ClipboardService.shared.copy(game.id.uppercased())
+                }
             }
 #endif
             
@@ -70,7 +74,7 @@ struct GameBoxView: View {
             renameOpen = true
         }
         .confirmationDialog("Change Artwork", isPresented: $changeArtworkOpen) {
-#if canImport(UIKit)
+#if canImport(UIKit) && !os(tvOS)
             if UIPasteboard.general.hasImages {
                 Button("Clipboard") {
                     if let image = UIPasteboard.general.image, let data = image.jpegData(compressionQuality: 1.0) {
@@ -143,12 +147,47 @@ struct GameBoxView: View {
 }
 
 #Preview {
-    GameBoxView(
-        game: Game(
-            identifier: .init("0"),
-            name: "The Legend of Zelda",
-            data: .init(),
-            console: .nes
-        )
+    let zelda = Game(
+        identifier: .init("0"),
+        name: "The Legend of Zelda",
+        data: .init(),
+        system: .nes
     )
+    zelda.artwork = .init(image: .nesArtworkFront)
+    
+    let oot = Game(
+        identifier: .init("1"),
+        name: "The Legend of Zelda: Ocarina of Time",
+        data: .init(),
+        system: .nintendo64
+    )
+    oot.artwork = .init(image: .n64ArtworkFront)
+
+    return VStack {
+        HStack {
+            GameBoxView(
+                game: Game(
+                    identifier: .init("2"),
+                    name: "The Legend of Zelda",
+                    data: .init(),
+                    system: .nes
+                )
+            )
+            
+            GameBoxView(game: zelda)
+        }
+        
+        HStack {
+            GameBoxView(
+                game: Game(
+                    identifier: .init("3"),
+                    name: "The Legend of Zelda: Ocarina of Time",
+                    data: .init(),
+                    system: .nintendo64
+                )
+            )
+            
+            GameBoxView(game: oot)
+        }
+    }
 }

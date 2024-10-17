@@ -1,5 +1,6 @@
 import SwiftUI
-import XemuPersistance
+import XemuCore
+import stylx
 
 struct DebugDefaultsView: View {
     @Environment(AppContext.self) private var context
@@ -11,7 +12,7 @@ struct DebugDefaultsView: View {
                 try? modelContext.delete(model: Game.self)
             }
         }
-        .navigationTitle(Text("Debug Settings"))
+        .title("Debug Settings", displayMode: .inline)
     }
 }
 

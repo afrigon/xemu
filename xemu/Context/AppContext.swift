@@ -31,7 +31,7 @@ class AppContext {
         setupFirebase()
             
         initialized = true
-        set(state: .ready)
+        set(state: .menu)
     }
     
     private func setupFirebase() {

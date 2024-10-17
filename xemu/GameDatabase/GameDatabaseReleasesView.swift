@@ -1,12 +1,12 @@
 import SwiftUI
-import XemuPersistance
 import XemuCore
 import stylx
 import XKit
 
 struct GameDatabaseReleasesView: View {
     @Environment(\.dismiss) var dismiss
-    
+    @Environment(AppContext.self) var context
+
     private var game: Game
     
     @State private var items: [OpenVGDBRelease] = []
@@ -15,7 +15,7 @@ struct GameDatabaseReleasesView: View {
 
     init(game: Game) {
         self.game = game
-        search = game.name
+        search = game.name.sanitizedFilename
     }
     
     var body: some View {
@@ -32,19 +32,19 @@ struct GameDatabaseReleasesView: View {
                                     image
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
-                                        .frame(maxWidth: 100, maxHeight: 100)
+                                        .frame(maxWidth: .xxxxxl, maxHeight: .xxxxxl)
                                 },
                                 placeholder: {
                                     RoundedRectangle(cornerRadius: .xxs)
                                         .fill(.backgroundMuted)
-                                        .frame(width: 100, height: 100)
+                                        .frame(width: .xxxxxl, height: .xxxxxl)
                                 }
                             )
                             
                             Text(item.name)
                                 .lineLimit(2)
                                 .foregroundStyle(.foregroundDefault)
-                                .textStyle(.code(.l))
+                                .retroTextStyle(size: .title)
                         }
                     })
                 }
@@ -53,7 +53,7 @@ struct GameDatabaseReleasesView: View {
                 if items.isEmpty {
                     VStack {
                         Text("No releases found")
-                            .textStyle(.code(.l))
+                            .retroTextStyle(size: .header, weight: .bold)
                     }
                 }
             }
@@ -64,8 +64,8 @@ struct GameDatabaseReleasesView: View {
                         .padding(.xl)
                 }
             }
-            .navigationTitle("Change Artwork")
-            .navigationBarTitleDisplayMode(.inline)
+            .title("Change Artwork", displayMode: .inline)
+#if canImport(UIKit)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel", role: .cancel) {
@@ -73,6 +73,15 @@ struct GameDatabaseReleasesView: View {
                     }
                 }
             }
+#else
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", role: .cancel) {
+                        dismiss()
+                    }
+                }
+            }
+#endif
         }
         .task {
             searchReleases()
@@ -99,11 +108,18 @@ struct GameDatabaseReleasesView: View {
     }
     
     private func searchReleases() {
-        guard let service = OpenVGDBService.shared else {
+        guard let service = OpenVGDBService.shared, let openVGDBIdentifier = game.system.openVGDBIdentifier else {
             return
         }
         
-        items = service.getReleases(like: search, for: game.console.openVGDBIdentifier)
+        do throws(XemuError) {
+            items = try service.getReleases(
+                like: search,
+                for: openVGDBIdentifier
+            )
+        } catch let error {
+            context.error = error
+        }
     }
 }
 
@@ -113,7 +129,7 @@ struct GameDatabaseReleasesView: View {
             identifier: .init("0"),
             name: "Zelda",
             data: .init(),
-            console: .nes
+            system: .nes
         )
     )
 }

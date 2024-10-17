@@ -9,8 +9,7 @@
 /* Begin PBXBuildFile section */
 		AD01196D2CB5957D00875153 /* stylx in Frameworks */ = {isa = PBXBuildFile; productRef = AD01196C2CB5957D00875153 /* stylx */; };
 		AD0119702CB5959100875153 /* XKit in Frameworks */ = {isa = PBXBuildFile; productRef = AD01196F2CB5959100875153 /* XKit */; };
-		AD0E76562CB5EF4600B24138 /* XemuRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = AD0E76552CB5EF4600B24138 /* XemuRuntime */; };
-		AD0E76582CB5EF4B00B24138 /* XemuPersistance in Frameworks */ = {isa = PBXBuildFile; productRef = AD0E76572CB5EF4B00B24138 /* XemuPersistance */; };
+		ADEF422F2CBDE32A008A1C26 /* XemuCore in Frameworks */ = {isa = PBXBuildFile; productRef = ADEF422E2CBDE32A008A1C26 /* XemuCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +30,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AD1C9F082CBDEE0700229258 /* xemu-cli */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "xemu-cli"; sourceTree = "<group>"; };
 		AD2B2DCF2CB7889C00783899 /* xemu-lib */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "xemu-lib"; sourceTree = "<group>"; };
 		ADDFBCDD2CB4BC79007FAAD3 /* xemu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = xemu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ADDFBCEE2CB4BC7A007FAAD3 /* xemuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = xemuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -73,10 +73,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ADEF422F2CBDE32A008A1C26 /* XemuCore in Frameworks */,
 				AD0119702CB5959100875153 /* XKit in Frameworks */,
 				AD01196D2CB5957D00875153 /* stylx in Frameworks */,
-				AD0E76562CB5EF4600B24138 /* XemuRuntime in Frameworks */,
-				AD0E76582CB5EF4B00B24138 /* XemuPersistance in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,8 +106,9 @@
 		ADDFBCD42CB4BC79007FAAD3 = {
 			isa = PBXGroup;
 			children = (
-				AD2B2DCF2CB7889C00783899 /* xemu-lib */,
+				AD1C9F082CBDEE0700229258 /* xemu-cli */,
 				ADDFBCDF2CB4BC79007FAAD3 /* xemu */,
+				AD2B2DCF2CB7889C00783899 /* xemu-lib */,
 				ADDFBCF12CB4BC7A007FAAD3 /* xemuTests */,
 				ADDFBCFB2CB4BC7A007FAAD3 /* xemuUITests */,
 				AD0E76542CB5EF4600B24138 /* Frameworks */,
@@ -148,8 +148,7 @@
 			packageProductDependencies = (
 				AD01196C2CB5957D00875153 /* stylx */,
 				AD01196F2CB5959100875153 /* XKit */,
-				AD0E76552CB5EF4600B24138 /* XemuRuntime */,
-				AD0E76572CB5EF4B00B24138 /* XemuPersistance */,
+				ADEF422E2CBDE32A008A1C26 /* XemuCore */,
 			);
 			productName = xemu;
 			productReference = ADDFBCDD2CB4BC79007FAAD3 /* xemu.app */;
@@ -433,11 +432,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = xemu/Resources/xemu.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_ASSET_PATHS = xemu/Debug/PreviewContent.xcassets;
 				DEVELOPMENT_TEAM = 7LYG6KRX2T;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -480,11 +480,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = xemu/Resources/xemu.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_ASSET_PATHS = xemu/Debug/PreviewContent.xcassets;
 				DEVELOPMENT_TEAM = 7LYG6KRX2T;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -683,13 +684,9 @@
 			package = AD01196E2CB5959100875153 /* XCRemoteSwiftPackageReference "XKit" */;
 			productName = XKit;
 		};
-		AD0E76552CB5EF4600B24138 /* XemuRuntime */ = {
+		ADEF422E2CBDE32A008A1C26 /* XemuCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = XemuRuntime;
-		};
-		AD0E76572CB5EF4B00B24138 /* XemuPersistance */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = XemuPersistance;
+			productName = XemuCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

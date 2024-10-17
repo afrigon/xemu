@@ -11,10 +11,8 @@ let package = Package(
         .tvOS(.v18)
     ],
     products: [
-        .library(name: "XemuDebugger", targets: ["XemuDebugger"]),
-        .library(name: "XemuRuntime", targets: ["XemuRuntime"]),
         .library(name: "XemuCore", targets: ["XemuCore"]),
-        .library(name: "XemuPersistance", targets: ["XemuPersistance"])
+        .library(name: "XemuSwiftUI", targets: ["XemuSwiftUI"])
     ],
     dependencies: [
         .package(url: "https://github.com/afrigon/XKit", branch: "main"),
@@ -24,9 +22,6 @@ let package = Package(
         // MARK: XemuCore
         .target(
             name: "XemuCore",
-            dependencies: [
-                "XemuNES"
-            ],
             path: "Sources/XemuCore"
         ),
         .testTarget(
@@ -37,22 +32,24 @@ let package = Package(
             path: "Tests/XemuCore"
         ),
         
-        // MARK: XemuDebugger
+        // MARK: XemuCore
         .target(
-            name: "XemuDebugger",
+            name: "XemuSwiftUI",
             dependencies: [
-                "XemuCore"
+                "XemuCore",
+                "XemuNES",
+                "stylx"
             ],
-            path: "Sources/XemuDebugger"
+            path: "Sources/XemuSwiftUI"
         ),
         .testTarget(
-            name: "XemuDebuggerTests",
+            name: "XemuSwiftUITests",
             dependencies: [
-                "XemuDebugger"
+                "XemuSwiftUI"
             ],
-            path: "Tests/XemuDebugger"
+            path: "Tests/XemuSwiftUI"
         ),
-        
+
         // MARK: XemuNES
         .target(
             name: "XemuNES",
@@ -64,38 +61,6 @@ let package = Package(
                 "XemuNES"
             ],
             path: "Tests/XemuNES"
-        ),
-
-        // MARK: XemuRuntime
-        .target(
-            name: "XemuRuntime",
-            dependencies: [
-                "XemuCore"
-            ],
-            path: "Sources/XemuRuntime"
-        ),
-        .testTarget(
-            name: "XemuRuntimeTests",
-            dependencies: [
-                "XemuRuntime"
-            ],
-            path: "Tests/XemuRuntime"
-        ),
-
-        // MARK: XemuPersistance
-        .target(
-            name: "XemuPersistance",
-            dependencies: [
-                "XemuCore"
-            ],
-            path: "Sources/XemuPersistance"
-        ),
-        .testTarget(
-            name: "XemuPersistanceTests",
-            dependencies: [
-                "XemuPersistance"
-            ],
-            path: "Tests/XemuPersistance"
         )
     ]
 )

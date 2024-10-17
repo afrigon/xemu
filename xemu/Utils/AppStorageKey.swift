@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum AppStorageKey: String {
-    case todoremovethis = "settings.debug.group.name"
+    case gameCollectionSorting = "settings.game-collection.sorting"
 }
 
 extension AppStorage {

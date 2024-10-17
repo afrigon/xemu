@@ -1,6 +1,6 @@
 import SQLite3
 import Foundation
-
+import XemuCore
 
 class OpenVGDBService {
     static let shared = OpenVGDBService()
@@ -14,7 +14,7 @@ class OpenVGDBService {
         }
         
         guard sqlite3_open(url.absoluteString, &db) == SQLITE_OK else {
-            print("Could not open OpenVGDB database.")
+            print("Could not open OpenVGDB database.") // TODO: log this somewhere appropriate
             return nil
         }
     }
@@ -23,7 +23,52 @@ class OpenVGDBService {
         sqlite3_close(db)
     }
     
-    func getReleases(like name: String, for console: String) -> [OpenVGDBRelease] {
+    func getArtwork(_ name: String, system: SystemType) async -> Data? {
+        guard let openVGDBIdentifier = system.openVGDBIdentifier, let release = try? getFirstRelease(matching: name.sanitizedFilename, for: openVGDBIdentifier) else {
+            return nil
+        }
+            
+        return await release.artworkURL.data()
+    }
+    
+    func getFirstRelease(matching name: String, for system: String) throws(XemuError) -> OpenVGDBRelease? {
+        let selectQuery = """
+SELECT RELEASES.releaseTitleName AS name, RELEASES.releaseCoverFront AS image, bm25(RELEASES_FTS) AS rank
+FROM RELEASES
+JOIN RELEASES_FTS ON RELEASES.releaseID = RELEASES_FTS.rowid
+WHERE RELEASES_FTS MATCH ?
+AND RELEASES.TEMPsystemShortName = ?
+ORDER BY rank
+LIMIT 1
+"""
+
+        var queryStatement: OpaquePointer?
+        
+        var release: OpenVGDBRelease? = nil
+        
+        if sqlite3_prepare_v2(db, selectQuery, -1, &queryStatement, nil) == SQLITE_OK {
+            sqlite3_bind_text(queryStatement, 1, "\(name)*", -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(queryStatement, 2, system, -1, SQLITE_TRANSIENT)
+            
+            if sqlite3_step(queryStatement) == SQLITE_ROW {
+                let name = String(cString: sqlite3_column_text(queryStatement, 0))
+                
+                if let artworkCString = sqlite3_column_text(queryStatement, 1), let artworkURL = URL(string: String(cString: artworkCString)) {
+                    release = OpenVGDBRelease(name: name, artworkURL: artworkURL)
+                }
+            }
+        } else {
+            let err = String(cString: sqlite3_errmsg(db))
+            print("Error preparing select: \(err)") // TODO: log this somewhere appropriate
+            
+            throw .openVGDBError
+        }
+        
+        sqlite3_finalize(queryStatement)
+        return release
+    }
+
+    func getReleases(like name: String, for system: String) throws(XemuError) -> [OpenVGDBRelease] {
         let selectQuery = """
 WITH RankedReleases AS (
     SELECT RELEASES.releaseTitleName AS name, RELEASES.releaseCoverFront AS image, bm25(RELEASES_FTS) AS rank
@@ -45,7 +90,7 @@ GROUP BY image
         
         if sqlite3_prepare_v2(db, selectQuery, -1, &queryStatement, nil) == SQLITE_OK {
             sqlite3_bind_text(queryStatement, 1, "\(name)*", -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(queryStatement, 2, console, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(queryStatement, 2, system, -1, SQLITE_TRANSIENT)
             
             while sqlite3_step(queryStatement) == SQLITE_ROW {
                 let name = String(cString: sqlite3_column_text(queryStatement, 0))
@@ -59,11 +104,11 @@ GROUP BY image
             }
         } else {
             let err = String(cString: sqlite3_errmsg(db))
-            print("Error preparing select: \(err)")
+            print("Error preparing select: \(err)") // TODO: log this somewhere appropriate
+            throw .openVGDBError
         }
 
         sqlite3_finalize(queryStatement)
-        
         return releases
     }
 }

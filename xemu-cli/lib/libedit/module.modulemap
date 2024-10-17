@@ -1,0 +1,4 @@
+module Clibedit [system] {
+    header "shim.h"
+    export *
+}

@@ -2,30 +2,36 @@ import SwiftUI
 import XemuCore
 
 struct GamePlaceholder: View {
-    private let console: ConsoleType
+    private let system: SystemType
     
-    init(console: ConsoleType) {
-        self.console = console
+    init(system: SystemType) {
+        self.system = system
     }
     
     var body: some View {
         RoundedRectangle(cornerRadius: .xxs)
-            .fill(.backgroundMuted)
+            .fill(.backgroundEmphasis)
             .overlay {
-                Image(console.icon)
+                Image(system.icon)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .padding(.m)
+                    .padding(.l)
                     .opacity(0.75)
             }
     }
 }
 
 #Preview {
-    VStack {
-        ForEach(ConsoleType.allCases, id: \.rawValue) { console in
-            GamePlaceholder(console: .nes)
-                .frame(width: 100, height: 100)
+    ScrollView {
+        LazyVGrid(columns: [
+            .init(.fixed(100)),
+            .init(.fixed(100)),
+            .init(.fixed(100))
+        ]) {
+            ForEach(SystemType.allCases, id: \.rawValue) { system in
+                GamePlaceholder(system: system)
+                    .frame(width: 100, height: 100)
+            }
         }
     }
 }
