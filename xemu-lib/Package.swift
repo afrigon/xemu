@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/afrigon/XKit", branch: "main"),
-        .package(url: "https://github.com/afrigon/stylx", branch: "main")
+        .package(url: "https://github.com/afrigon/stylx", branch: "main"),
     ],
     targets: [
         // MARK: XemuCore

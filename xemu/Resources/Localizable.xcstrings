@@ -111,6 +111,12 @@
     },
     "Your collection is empty. Import games with the + button to start playing." : {
 
+    },
+    "Your upload server is started at" : {
+
+    },
+    "Your upload server is started." : {
+
     }
   },
   "version" : "1.0"

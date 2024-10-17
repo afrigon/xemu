@@ -1,0 +1,76 @@
+/*:root {*/
+/*  --primary-color: #93E1D8;*/
+/*}*/
+/**/
+/*body {*/
+/*    background-color: var(--primary-color);*/
+/*}*/
+/**/
+/*form {*/
+/*    background-color: white;*/
+/*    padding: 32px;*/
+/*    text-align: center;*/
+/*}*/
+
+:root {
+  --bg-color: #93E1D8;
+  --form-bg-color: #ffffff;
+  --border-color: #ccc;
+  --hover-border-color: #007bff;
+  --drop-zone-bg: #fafafa;
+  --hover-bg: #f1f7ff;
+  --text-color: #333;
+  --radius: 15px;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background-color: var(--bg-color);
+}
+
+.upload-container {
+  background-color: var(--form-bg-color);
+  border-radius: var(--radius);
+  padding: 30px;
+  width: 400px;
+  text-align: center;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: var(--text-color);
+}
+
+.drop-zone {
+  border: 2px dashed var(--border-color);
+  padding: 40px;
+  background-color: var(--drop-zone-bg);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+.drop-zone.dragover {
+  background-color: var(--hover-bg);
+  border-color: var(--hover-border-color);
+}
+
+.file-input {
+  display: none;
+}
+
+#file-list {
+  margin-top: 20px;
+}
+
+.file-list .file-item {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--text-color);
+}

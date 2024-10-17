@@ -1,22 +1,26 @@
 import SwiftUI
 
 struct GameImporterModifier: ViewModifier {
+    @Environment(\.modelContext) var modelContext
+    
     let isPresented: Binding<Bool>
     let onCompletion: (Result<[URL], Error>) -> Void
     
     func body(content: Content) -> some View {
         content
 #if os(tvOS)
-//            .gameUploadGameServer(
-//                isPresented: isPresented,
-//                onCompletion: onCompletion
-//            )
-//          TODO: spawn a webserver with a file upload route
-//          TODO: generate and present a QR Code to let the person access the web server
-            .webServer(
-                isPresented: isPresented,
-                onCompletion: onCompletion
-            )
+            .sheet(isPresented: isPresented) {
+                GameUploadServerView(isPresented: isPresented) { @MainActor title, data in
+                    do {
+                        let game = try ImportExportService.shared.importGame(title, data: data)
+                        modelContext.insert(game)
+                    } catch {
+                        return false
+                    }
+                    
+                    return true
+                }
+            }
 #else
             .fileImporter(
                 isPresented: isPresented,

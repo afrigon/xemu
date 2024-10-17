@@ -5,6 +5,21 @@ import SwiftData
 class ImportExportService {
     static let shared = ImportExportService()
     
+    public func importGame(_ title: String, data: Data) throws(XemuError) -> Game {
+        guard let url = URL(string: title) else {
+            throw .unsuportedFileExtension
+        }
+        
+        let fileExtension = url.pathExtension
+        
+        return switch fileExtension {
+            case "nes":
+                handleGame(url: url, data, system: .nes)
+            default:
+                throw .unsuportedFileExtension
+        }
+    }
+
     public func importGame(_ url: URL) throws(XemuError) -> Game {
         let fileExtension = url.pathExtension.lowercased()
         let supportedExtensions: [String] = ["nes"]

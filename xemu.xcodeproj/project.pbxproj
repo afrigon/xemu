@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		AD01196D2CB5957D00875153 /* stylx in Frameworks */ = {isa = PBXBuildFile; productRef = AD01196C2CB5957D00875153 /* stylx */; };
 		AD0119702CB5959100875153 /* XKit in Frameworks */ = {isa = PBXBuildFile; productRef = AD01196F2CB5959100875153 /* XKit */; };
+		AD0269122CC0D84700B25286 /* Vapor in Frameworks */ = {isa = PBXBuildFile; productRef = AD0269112CC0D84700B25286 /* Vapor */; };
 		ADEF422F2CBDE32A008A1C26 /* XemuCore in Frameworks */ = {isa = PBXBuildFile; productRef = ADEF422E2CBDE32A008A1C26 /* XemuCore */; };
 /* End PBXBuildFile section */
 
@@ -74,6 +75,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				ADEF422F2CBDE32A008A1C26 /* XemuCore in Frameworks */,
+				AD0269122CC0D84700B25286 /* Vapor in Frameworks */,
 				AD0119702CB5959100875153 /* XKit in Frameworks */,
 				AD01196D2CB5957D00875153 /* stylx in Frameworks */,
 			);
@@ -149,6 +151,7 @@
 				AD01196C2CB5957D00875153 /* stylx */,
 				AD01196F2CB5959100875153 /* XKit */,
 				ADEF422E2CBDE32A008A1C26 /* XemuCore */,
+				AD0269112CC0D84700B25286 /* Vapor */,
 			);
 			productName = xemu;
 			productReference = ADDFBCDD2CB4BC79007FAAD3 /* xemu.app */;
@@ -236,6 +239,7 @@
 			packageReferences = (
 				AD01196B2CB5957D00875153 /* XCRemoteSwiftPackageReference "stylx" */,
 				AD01196E2CB5959100875153 /* XCRemoteSwiftPackageReference "XKit" */,
+				AD0269102CC0D84700B25286 /* XCRemoteSwiftPackageReference "vapor" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = ADDFBCDE2CB4BC79007FAAD3 /* Products */;
@@ -671,6 +675,14 @@
 				kind = branch;
 			};
 		};
+		AD0269102CC0D84700B25286 /* XCRemoteSwiftPackageReference "vapor" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/vapor/vapor.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.106.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -683,6 +695,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AD01196E2CB5959100875153 /* XCRemoteSwiftPackageReference "XKit" */;
 			productName = XKit;
+		};
+		AD0269112CC0D84700B25286 /* Vapor */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD0269102CC0D84700B25286 /* XCRemoteSwiftPackageReference "vapor" */;
+			productName = Vapor;
 		};
 		ADEF422E2CBDE32A008A1C26 /* XemuCore */ = {
 			isa = XCSwiftPackageProductDependency;

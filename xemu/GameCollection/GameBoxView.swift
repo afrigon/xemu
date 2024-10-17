@@ -26,7 +26,7 @@ struct GameBoxView: View {
             context.set(state: .gaming(game))
         }, label: {
             VStack(spacing: .s) {
-                if let artwork = game.artwork, let image = PlatformImage(data: artwork) {
+                if let artwork = game.artwork {
                     ImageThatFits(artwork, maxSize: .xxxxxxxl)
                         .clipShape(RoundedRectangle(cornerRadius: .xxs))
                 } else {
@@ -40,6 +40,7 @@ struct GameBoxView: View {
                     .lineLimit(4)
             }
         })
+        .buttonStyle(.borderless)
         .frame(maxWidth: .xxxxxxxl)
         .padding(.xs)
         .contentShape(RoundedRectangle(cornerRadius: .xs))

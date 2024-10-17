@@ -10,13 +10,13 @@ enum RetroFontSize {
     var value: CGFloat {
         return switch self {
             case .header:
-                .init(19, tvOS: 40)
+                .init(19, tvOS: 38)
             case .title:
-                16
+                .init(16, tvOS: 32)
             case .subtitle:
                 .init(14, tvOS: 28)
             case .body:
-                10
+                .init(10, tvOS: 20)
         }
     }
     

@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Xemu Game Upload</title>
+        <meta name="description" content="Game Upload Form" />
+        <meta name="author" content="Alexandre Frigon" />
+        <meta name="copyright" content="Alexandre Frigon" />
+        <meta name="theme-color" content="#FFFFFF" />
+        <meta name="keywords" content="Xemu emulator game upload" />
+        <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+        <link rel="shortcut icon" href="/favicon.ico">
+        <link rel="stylesheet" href="./index.css" />
+        <script type="text/javascript" src="./index.js"></script>
+    </head>
+    
+    <body>
+        <div class="upload-container">
+            <h2>Upload your file</h2>
+            <div id="drop-zone" class="drop-zone">
+                <p>Drag & Drop your file here or click to upload</p>
+                <input type="file" id="fileInput" class="file-input" multiple>
+            </div>
+            <div id="file-list" class="file-list"></div>
+        </div>
+        
+<!--        <form action="/upload" method="POST" enctype="multipart/form-data">-->
+<!--            <input type="file" id="input-file" name="file" />-->
+<!--            <input type="submit" />-->
+<!--        </form>-->
+    </body>
+</html>
