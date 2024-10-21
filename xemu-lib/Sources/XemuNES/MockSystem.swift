@@ -7,6 +7,7 @@ public class MockSystem: Emulator, BusDelegate {
     let cpu: Chip6502
     let bus: Bus = .init()
     var ram: [UInt8] = .init(repeating: 0, count: 0xFFFF)
+    var cartridge: Cartridge?
 
     public init() {
         cpu = .init(bus: bus)
@@ -27,6 +28,10 @@ public class MockSystem: Emulator, BusDelegate {
         }
         
         ram[address] = data
+    }
+    
+    public func insert(cartridge: Cartridge) throws(XemuError) {
+        self.cartridge = cartridge
     }
     
     public func load(program: Data) throws(XemuError) {

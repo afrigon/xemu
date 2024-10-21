@@ -18,7 +18,7 @@ public class NES: Codable, BusDelegate {
 //        ppu = try container.decode(PPU.self, forKey: .ppu)
         
         bus.delegate = self
-        cpu.bus = bus
+        cpu._bus = bus
 //        apu.bus = bus
 //        ppu.bus = bus
     }

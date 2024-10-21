@@ -15,6 +15,8 @@ public enum XemuError: Int, Error {
     case indexOutOfBounds
     case dataOutOfAlignment
     case notImplemented
+    case invalidState
+    case busDisconnected
 
     public var domain: String {
         "app.frigon.xemu.XemuError"
@@ -54,6 +56,10 @@ public enum XemuError: Int, Error {
                 "Data cursor is out of alignment."
             case .notImplemented:
                 "This feature is not implemented yet."
+            case .invalidState:
+                "Something went wrong, the current state does not make sense."
+            case .busDisconnected:
+                "The bus of the emulator was disconnection and cannot continue running."
         }
     }
 }

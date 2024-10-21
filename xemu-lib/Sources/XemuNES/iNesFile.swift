@@ -126,7 +126,7 @@ public struct iNesFile: RomFile {
     let consoleType: ConsoleType
     let version: Version
     
-    //    let mapper: ?
+    let mapper: MapperType
 
     // Flag 8
 
@@ -158,7 +158,12 @@ public struct iNesFile: RomFile {
         switch version {
             case .iNes:
                 self.consoleType = ConsoleType(rawValue: consoleType)!
-                let mapper = UInt16(mapperHi) << 4 | UInt16(mapperLo)
+                
+                guard let mapper = MapperType(rawValue: UInt16(mapperHi) << 4 | UInt16(mapperLo)) else {
+                    throw .notImplemented
+                }
+                
+                self.mapper = mapper
                 
                 // TODO: double check past this
                 // Flag 8

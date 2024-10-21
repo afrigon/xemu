@@ -55,17 +55,17 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "366FAE96-BA61-4E5F-8BA7-B2938EE70963"
-            shouldBeEnabled = "Yes"
+            uuid = "99077E4C-F496-43BD-B1EF-D4FD4D0D542F"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "xemu-lib/Sources/XemuNES/Chip6502.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "592"
-            endingLineNumber = "592"
-            landmarkName = "ldx(_:)"
-            landmarkType = "7">
+            startingLineNumber = "539"
+            endingLineNumber = "539"
+            landmarkName = "Chip6502"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

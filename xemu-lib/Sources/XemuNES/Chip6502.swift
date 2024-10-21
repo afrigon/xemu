@@ -30,11 +30,11 @@ public class Chip6502: Codable {
     public enum State: Codable {
         case fetch
         case prefetched(Instruction)
-        case stack
-        case implied
-        case immediate(Mnemonic, UInt8)
-        case relative
-        case zeroPage
+        case stack(Mnemonic, StackStateType)
+        case implied(Mnemonic)
+        case immediate(Mnemonic)
+        case relative(Mnemonic, UInt8?, Int)
+        case zeroPage(Mnemonic, ZeroPageStateType)
         case zeroPageIndexed
         case absolute(Mnemonic, AbsoluteStateType)
         case absoluteIndexed
@@ -52,16 +52,23 @@ public class Chip6502: Codable {
         }
     }
     
-    public enum AbsoluteStateType: Codable {
-        case jmp(lo: UInt8?)
-        case read
-        case readModifyWrite
-        case write
+    public enum StackStateType: Codable {
+        case startSubroutine(tick: Int, lo: UInt8?)
+        case endSubroutine(tick: Int)
+        case returnFromInterrupt(tick: Int)
     }
     
-    public enum AbsoluteAddressingState: Codable {
-        case fetchLO
-        case fetchHI(UInt8)
+    public enum ZeroPageStateType: Codable {
+        case read
+        case readModifyWrite
+        case write(address: UInt8?)
+    }
+    
+    public enum AbsoluteStateType: Codable {
+        case jmp(lo: UInt8?)
+        case read(lo: UInt8?, hi: UInt8?)
+        case readModifyWrite
+        case write(lo: UInt8?, hi: UInt8?)
     }
     
     public enum Mnemonic: String, Codable {
@@ -443,13 +450,26 @@ public class Chip6502: Codable {
     
     public static let frequecy: Double = 1789773
     public static let stackBaseAddress: Int = 0x100
-
-    weak var bus: Bus?
     
-    private var state: State = .fetch
+    private var stackPointer: UInt16 {
+        UInt16(Chip6502.stackBaseAddress) + UInt16(s)
+    }
+
+    weak var _bus: Bus?
+    private var bus: Bus {
+        get throws(XemuError) {
+            guard let bus = _bus else {
+                throw .busDisconnected
+            }
+            
+            return bus
+        }
+    }
+    
+    var state: State = .fetch
     
     init(bus: Bus) {
-        self.bus = bus
+        self._bus = bus
     }
 
     /// Sets the given flags to 1 in the program status register
@@ -469,10 +489,31 @@ public class Chip6502: Codable {
             clearFlags(flag)
         }
     }
+    
+    private func setNZ(for value: UInt8) {
+        setFlags(.zero, if: value == 0)
+        setFlags(.negative, if: value & 0x80 != 0)
+    }
+
+    private func push(_ value: UInt8, advance: Bool = true) throws(XemuError) {
+        try bus.write(value, at: stackPointer)
+        
+        if advance {
+            s -= 1
+        }
+    }
+    
+    private func pull(advance: Bool = true) throws(XemuError) -> UInt8 {
+        if advance {
+            s += 1
+        }
+        
+        return try bus.read(at: stackPointer)
+    }
 
     @MainActor
     private func fetchInstruction(prefetching: Bool = false) throws(XemuError) -> Instruction {
-        let opcode = Int(readPC(advance: !prefetching))
+        let opcode = Int(try readPC(advance: !prefetching))
 
         guard let instruction = Chip6502.instructions[opcode] else {
             throw .illegalInstruction
@@ -481,8 +522,8 @@ public class Chip6502: Codable {
         return instruction
     }
     
-    private func readPC(advance: Bool = true) -> UInt8 {
-        let value = bus?.read(at: pc) ?? 0
+    private func readPC(advance: Bool = true) throws(XemuError) -> UInt8 {
+        let value = try bus.read(at: pc)
         
         if advance {
             pc += 1
@@ -502,8 +543,16 @@ public class Chip6502: Codable {
             case .prefetched(let instruction):
                 pc += 1
                 self.state = try handleFetchState(with: instruction)
-            case .immediate(let mnemonic, let value):
-                self.state = try handleImmediateState(mnemonic: mnemonic, value: value)
+            case .implied(let mnemonic):
+                self.state = try handleImpliedState(mnemonic: mnemonic)
+            case .stack(let mnemonic, let substate):
+                self.state = try handleStackState(mnemonic: mnemonic, substate: substate)
+            case .immediate(let mnemonic):
+                self.state = try handleImmediateState(mnemonic: mnemonic)
+            case .relative(let mnemonic, let value, let tick):
+                self.state = try handleRelativeState(mnemonic: mnemonic, value: value, tick: tick)
+            case .zeroPage(let mnemonic, let substate):
+                self.state = try handleZeroPageState(mnemonic: mnemonic, substate: substate)
             case .absolute(let mnemonic, let substate):
                 self.state = try handleAbsoluteState(mnemonic: mnemonic, substate: substate)
             default:
@@ -514,9 +563,35 @@ public class Chip6502: Codable {
     }
     
     private func handleFetchState(with instruction: Instruction) throws(XemuError) -> State {
+        switch instruction.mnemonic {
+            case .JSR:
+                return .stack(instruction.mnemonic, .startSubroutine(tick: 2, lo: nil))
+            case .RTS:
+                return .stack(instruction.mnemonic, .endSubroutine(tick: 2))
+            case .RTI:
+                return .stack(instruction.mnemonic, .returnFromInterrupt(tick: 2))
+            default:
+                break
+        }
+        
         switch instruction.addressingMode {
+            case .implied, .accumulator:
+                return .implied(instruction.mnemonic)
             case .immediate:
-                return .immediate(instruction.mnemonic, readPC())
+                return .immediate(instruction.mnemonic)
+            case .relative:
+                return .relative(instruction.mnemonic, nil, 3)
+            case .zeroPage(let index):
+                if let index {
+                    throw .notImplemented
+                } else {
+                    switch instruction.mnemonic {
+                        case .STA, .STX, .STY:
+                            return .zeroPage(instruction.mnemonic, .write(address: nil))
+                        default:
+                            throw .notImplemented
+                    }
+                }
             case .absolute(let index):
                 if let index {
                     throw .notImplemented
@@ -524,6 +599,10 @@ public class Chip6502: Codable {
                     switch instruction.mnemonic {
                         case .JMP:
                             return .absolute(instruction.mnemonic, .jmp(lo: nil))
+                        case .LDA, .LDX, .LDY:
+                            return .absolute(instruction.mnemonic, .read(lo: nil, hi: nil))
+                        case .STA, .STX, .STY:
+                            return .absolute(instruction.mnemonic, .write(lo: nil, hi: nil))
                         default:
                             throw .notImplemented
                     }
@@ -533,13 +612,138 @@ public class Chip6502: Codable {
         }
     }
     
+    private func handleStackState(mnemonic: Mnemonic, substate: StackStateType) throws(XemuError) -> State {
+        switch substate {
+            case .startSubroutine(let tick, let lo):
+                switch tick {
+                    case 2:
+                        let lo = try readPC()
+                        return .stack(mnemonic, .startSubroutine(tick: tick + 1, lo: lo))
+                    case 3:
+                        break
+                    case 4:
+                        try push(UInt8((pc - 2) >> 8))
+                    case 5:
+                        try push(UInt8((pc - 2) & 0xFF))
+                    case 6:
+                        guard let lo else {
+                            throw .invalidState
+                        }
+                        
+                        let hi = try readPC(advance: false)
+                        let value = UInt16(hi) << 8 | UInt16(lo)
+                        pc = value
+                        
+                        return .fetch
+                    default:
+                        throw .invalidState
+                }
+                
+                return .stack(mnemonic, .startSubroutine(tick: tick + 1, lo: lo))
+            case .endSubroutine(let tick):
+                switch tick {
+                    case 2:
+                        _ = try bus.read(at: pc)
+                    case 3:
+                        s += 1
+                    case 4:
+                        let lo = try pull()
+                        pc = pc & 0xFF00 | UInt16(lo)
+                    case 5:
+                        let hi = try pull(advance: false)
+                        pc = pc & 0xFF | UInt16(hi) << 8
+                    case 6:
+                        pc += 1
+                        
+                        return .fetch
+                    default:
+                        throw .invalidState
+                }
+                
+                return .stack(mnemonic, .endSubroutine(tick: tick + 1))
+            case .returnFromInterrupt(let tick):
+                switch tick {
+                    case 2:
+                        _ = try bus.read(at: pc)
+                    case 3:
+                        s += 1
+                    case 4:
+                        p = try pull()
+                    case 5:
+                        let lo = try pull()
+                        pc = pc & 0xFF00 | UInt16(lo)
+                    case 6:
+                        let hi = try pull(advance: false)
+                        pc = pc & 0xFF | UInt16(hi) << 8
+                        
+                        return .fetch
+                    default:
+                        throw .invalidState
+                }
+                
+                return .stack(mnemonic, .endSubroutine(tick: tick + 1))
+            default:
+                throw .notImplemented
+        }
+    }
+    
     @MainActor
-    private func handleImmediateState(mnemonic: Mnemonic, value: UInt8) throws(XemuError) -> State {
+    private func handleImpliedState(mnemonic: Mnemonic) throws(XemuError) -> State {
         switch mnemonic {
+            case .NOP:
+                break
+            case .SEC:
+                setFlags(.carry)
+            case .SED:
+                setFlags(.decimal)
+            case .SEI:
+                setFlags(.interrupt)
+            case .CLC:
+                clearFlags(.carry)
+            case .CLD:
+                clearFlags(.decimal)
+            case .CLI:
+                clearFlags(.interrupt)
+            case .CLV:
+                clearFlags(.overflow)
+            case .INX:
+                x &+= 1
+                setNZ(for: x)
+            case .INY:
+                y &+= 1
+                setNZ(for: y)
+            case .DEX:
+                x &-= 1
+                setNZ(for: x)
+            case .DEY:
+                y &-= 1
+                setNZ(for: y)
+            case .LSR:
+                let old = a
+                a >>= 1
+                setFlags(.carry, if: old & 1 != 0)
+                setNZ(for: a)
+            default:
+                throw .notImplemented
+        }
+        
+        return .prefetched(try fetchInstruction(prefetching: true))
+    }
+
+    @MainActor
+    private func handleImmediateState(mnemonic: Mnemonic) throws(XemuError) -> State {
+        let value = try readPC()
+        
+        switch mnemonic {
+            case .LDA:
+                a = value
+                setNZ(for: a)
             case .LDX:
-                ldx(value)
+                x = value
+                setNZ(for: x)
             case .LDY:
-                ldy(value)
+                y = value
+                setNZ(for: y)
             default:
                 throw .notImplemented
         }
@@ -547,19 +751,162 @@ public class Chip6502: Codable {
         return .prefetched(try fetchInstruction(prefetching: true))
     }
     
+    @MainActor
+    private func handleRelativeState(mnemonic: Mnemonic, value: UInt8?, tick: Int) throws(XemuError) -> State {
+        let value = (try? value ?? readPC()) ?? 0
+        
+        switch tick {
+            case 3:
+                let shouldBranch: Bool
+                
+                switch mnemonic {
+                    case .BCS:
+                        shouldBranch = p & StatusFlag.carry.rawValue != 0
+                    case .BCC:
+                        shouldBranch = p & StatusFlag.carry.rawValue == 0
+                    case .BVS:
+                        shouldBranch = p & StatusFlag.overflow.rawValue != 0
+                    case .BVC:
+                        shouldBranch = p & StatusFlag.overflow.rawValue == 0
+                    case .BEQ:
+                        shouldBranch = p & StatusFlag.zero.rawValue != 0
+                    case .BNE:
+                        shouldBranch = p & StatusFlag.zero.rawValue == 0
+                    case .BMI:
+                        shouldBranch = p & StatusFlag.negative.rawValue != 0
+                    case .BPL:
+                        shouldBranch = p & StatusFlag.negative.rawValue == 0
+                    default:
+                        throw .invalidState
+                }
+                
+                if shouldBranch {
+                    let value32 = UInt32(value)
+                    let signedValue = Int32(bitPattern: value32)
+                    
+                    pc = pc & 0xFF00 | UInt16(Int32(pc) &+ signedValue) & 0xFF
+                    return .relative(mnemonic, value, 4)
+                } else {
+                    return .prefetched(try fetchInstruction(prefetching: true))
+                }
+
+            case 4:
+                let value32 = UInt32(value)
+                let signedValue = Int32(bitPattern: value32)
+                
+                let page = pc & 0xFF00
+                let prePage = UInt16(Int32(pc) &- signedValue) & 0xFF00
+                
+                if prePage != page {
+                    if signedValue > 0 {
+                        pc &-= 0x0100
+                    } else {
+                        pc &+= 0x0100
+                    }
+                    
+                    return .relative(mnemonic, value, 5)
+                } else {
+                    return .prefetched(try fetchInstruction(prefetching: true))
+                }
+            case 5:
+                return .prefetched(try fetchInstruction(prefetching: true))
+            default:
+                throw .invalidState
+        }
+    }
+    
+    private func handleZeroPageState(mnemonic: Mnemonic, substate: ZeroPageStateType) throws(XemuError) -> State {
+        switch substate {
+            case .write(let address):
+                guard let address else {
+                    let address = try bus.read(at: pc)
+                    pc += 1
+                    return .zeroPage(mnemonic, .write(address: address))
+                }
+                
+                switch mnemonic {
+                    case .STA:
+                        try bus.write(a, at: UInt16(address))
+                    case .STX:
+                        try bus.write(x, at: UInt16(address))
+                    case .STY:
+                        try bus.write(y, at: UInt16(address))
+                    default:
+                        throw .notImplemented
+                }
+                
+                return .fetch
+            default:
+                throw .notImplemented
+        }
+    }
+    
     private func handleAbsoluteState(mnemonic: Mnemonic, substate: AbsoluteStateType) throws(XemuError) -> State {
         switch substate {
             case .jmp(let lo):
                 guard let lo else {
-                    let lo = bus?.read(at: pc) ?? 0
-                    pc += 1
+                    let lo = try readPC()
                     return .absolute(mnemonic, .jmp(lo: lo))
                 }
                 
-                let hi = bus?.read(at: pc) ?? 0
+                let hi = try readPC(advance: false)
+                let value = UInt16(hi) << 8 | UInt16(lo)
+                pc = value
+                
+                return .fetch
+                
+            case .read(let lo, let hi):
+                guard let lo else {
+                    let lo = try readPC()
+                    return .absolute(mnemonic, .read(lo: lo, hi: nil))
+                }
+
+                guard let hi else {
+                    let hi = try readPC()
+                    return .absolute(mnemonic, .read(lo: lo, hi: hi))
+                }
+                
                 let value = UInt16(hi) << 8 | UInt16(lo)
                 
-                jmp(to: value)
+                switch mnemonic {
+                    case .LDA:
+                        a = try bus.read(at: value)
+                        setNZ(for: a)
+                    case .LDX:
+                        x = try bus.read(at: value)
+                        setNZ(for: x)
+                    case .LDY:
+                        y = try bus.read(at: value)
+                        setNZ(for: y)
+                    default:
+                        throw .invalidState
+                }
+                
+                return .fetch
+
+            case .write(let lo, let hi):
+                guard let lo else {
+                    let lo = try readPC()
+                    return .absolute(mnemonic, .write(lo: lo, hi: nil))
+                }
+
+                guard let hi else {
+                    let hi = try readPC()
+                    return .absolute(mnemonic, .write(lo: lo, hi: hi))
+                }
+                
+                let value = UInt16(hi) << 8 | UInt16(lo)
+                
+                switch mnemonic {
+                    case .STA:
+                        try bus.write(a, at: value)
+                    case .STX:
+                        try bus.write(x, at: value)
+                    case .STY:
+                        try bus.write(y, at: value)
+                    default:
+                        throw .invalidState
+                }
                 
                 return .fetch
             default:
@@ -582,24 +929,6 @@ public class Chip6502: Codable {
         
     }
     
-    private func jmp(to address: UInt16) {
-        pc = address
-    }
-    
-    private func ldx(_ value: UInt8) {
-        x = value
-        
-        setFlags(.zero, if: x == 0)
-//        setFlags(.negative, if: x & 0x80 != 0)
-    }
-    
-    private func ldy(_ value: UInt8) {
-        y = value
-        
-        setFlags(.zero, if: y == 0)
-        setFlags(.negative, if: y & 0x80 != 0)
-    }
-
     enum CodingKeys: CodingKey {
         case a
         case x
