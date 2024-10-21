@@ -76,6 +76,7 @@ struct GameBoxCollectionView: View {
                 })
             }
         }
+        .background(.ultraThinMaterial)
     }
 }
 

@@ -2,6 +2,7 @@ import SwiftUI
 import XKit
 import XemuCore
 import stylx
+import XemuSwiftUI
 
 struct MainView: View {
     @Environment(\.modelContext) var modelContext
@@ -22,7 +23,8 @@ struct MainView: View {
                 case .menu:
                     MenuView()
                 case .gaming(let game):
-                    GameView(game: game)
+                    NesDebugView()
+//                    GameView(game: game)
             }
         }
         .alert(

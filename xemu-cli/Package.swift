@@ -3,12 +3,25 @@
 import PackageDescription
 
 let package = Package(
-    name: "XemuCLI",
+    name: "xemu",
+    defaultLocalization: "en",
+    platforms: [
+        .macOS(.v15)
+    ],
+    dependencies: [
+        .package(name: "XemuLib", path: "../xemu-lib"),
+        .package(url: "https://github.com/afrigon/Prism", branch: "main")
+    ],
     targets: [
         .executableTarget(
             name: "XemuCLI",
             dependencies: [
-                "Clibedit"
+                "Clibedit",
+                .product(name: "Prism", package: "Prism"),
+                .product(name: "XemuFoundation", package: "XemuLib"),
+                .product(name: "XemuCore", package: "XemuLib"),
+                .product(name: "XemuDebugger", package: "XemuLib"),
+                .product(name: "XemuNES", package: "XemuLib")
             ],
             path: "Sources"
         ),

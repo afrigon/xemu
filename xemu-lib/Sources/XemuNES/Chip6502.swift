@@ -1,10 +1,70 @@
+import XemuDebugger
+import XemuFoundation
+
 public class Chip6502: Codable {
-    enum State: Codable {
-        case initial
-        case fetching
+    
+    enum StatusFlag: UInt8 {
+        case carry      = 0b0000_0001
+        case zero       = 0b0000_0010
+        case interrupt  = 0b0000_0100
+        case decimal    = 0b0000_1000
+        case b          = 0b0001_0000
+        case alwaysOne  = 0b0010_0000
+        case overflow   = 0b0100_0000
+        case negative   = 0b1000_0000
+        
+        // 7  bit  0
+        // ---- ----
+        // NV1B DIZC
+        // |||| ||||
+        // |||| |||+- Carry
+        // |||| ||+-- Zero
+        // |||| |+--- Interrupt Disable
+        // |||| +---- Decimal
+        // |||+------ (No CPU effect; see: the B flag)
+        // ||+------- (No CPU effect; always pushed as 1)
+        // |+-------- Overflow
+        // +--------- Negative
     }
     
-    enum Mnemonic: String {
+    public enum State: Codable {
+        case fetch
+        case prefetched(Instruction)
+        case stack
+        case implied
+        case immediate(Mnemonic, UInt8)
+        case relative
+        case zeroPage
+        case zeroPageIndexed
+        case absolute(Mnemonic, AbsoluteStateType)
+        case absoluteIndexed
+        case indirect
+        case indexedIndirect
+        case indirectIndexed
+        
+        var complete: Bool {
+            switch self {
+                case .fetch, .prefetched:
+                    true
+                default:
+                    false
+            }
+        }
+    }
+    
+    public enum AbsoluteStateType: Codable {
+        case jmp(lo: UInt8?)
+        case read
+        case readModifyWrite
+        case write
+    }
+    
+    public enum AbsoluteAddressingState: Codable {
+        case fetchLO
+        case fetchHI(UInt8)
+    }
+    
+    public enum Mnemonic: String, Codable {
         case ADC
         case AND
         case ASL
@@ -63,8 +123,8 @@ public class Chip6502: Codable {
         case TYA
     }
     
-    enum AddressingMode {
-        enum Index {
+    public enum AddressingMode: Codable {
+        public enum Index: Codable {
             case x
             case y
         }
@@ -82,9 +142,25 @@ public class Chip6502: Codable {
         static var indirect: AddressingMode { .indirect(nil) }
     }
     
-    struct Instruction {
+    public struct Instruction: Codable {
         let mnemonic: Mnemonic
         let addressingMode: AddressingMode
+    }
+    
+    enum InterruptType: UInt16 {
+        
+        /// Non-Maskable Interrupt triggered by ppu
+        case nmi = 0xFFFA
+        
+        /// Triggered on reset button press and initial boot
+        case reset = 0xFFFC
+        
+        /// Maskable Interrupt triggered by a brk instruction or by memory mappers
+        case irq = 0xFFFE
+
+        var address: UInt16 {
+            return self.rawValue
+        }
     }
     
     /// Accumulator Register
@@ -104,21 +180,9 @@ public class Chip6502: Codable {
 
     /// Program Status Register
     var p: UInt8 = 0b0010_0100
-    
-    // 7  bit  0
-    // ---- ----
-    // NV1B DIZC
-    // |||| ||||
-    // |||| |||+- Carry
-    // |||| ||+-- Zero
-    // |||| |+--- Interrupt Disable
-    // |||| +---- Decimal
-    // |||+------ (No CPU effect; see: the B flag)
-    // ||+------- (No CPU effect; always pushed as 1)
-    // |+-------- Overflow
-    // +--------- Negative
 
-    private let instructions: [Instruction?] = [
+    @MainActor
+    public static let instructions: [Instruction?] = [
         Instruction(mnemonic: .BRK, addressingMode: .implied),      // $00
         Instruction(mnemonic: .ORA, addressingMode: .indirect(.x)), // $01
         nil,                                                        // $02
@@ -377,29 +441,132 @@ public class Chip6502: Codable {
         nil                                                         // $FF
     ]
     
-    weak var bus: Bus!
+    public static let frequecy: Double = 1789773
+    public static let stackBaseAddress: Int = 0x100
+
+    weak var bus: Bus?
     
-    private var state: State = .initial
+    private var state: State = .fetch
     
     init(bus: Bus) {
         self.bus = bus
     }
 
     /// Sets the given flags to 1 in the program status register
-    private func setFlags(_ flags: UInt8) {
-        p |= flags
+    private func setFlags(_ flags: StatusFlag...) {
+        p = flags.reduce(p) { $0 | $1.rawValue }
     }
     
     /// Sets the given flags to 0 in the program status register
-    private func clearFlags(_ flags: UInt8) {
-        p &= ~flags
+    private func clearFlags(_ flags: StatusFlag...) {
+        p &= ~flags.reduce(0) { $0 | $1.rawValue }
+    }
+    
+    private func setFlags(_ flag: StatusFlag, if value: Bool) {
+        if value {
+            setFlags(flag)
+        } else {
+            clearFlags(flag)
+        }
+    }
+
+    @MainActor
+    private func fetchInstruction(prefetching: Bool = false) throws(XemuError) -> Instruction {
+        let opcode = Int(readPC(advance: !prefetching))
+
+        guard let instruction = Chip6502.instructions[opcode] else {
+            throw .illegalInstruction
+        }
+        
+        return instruction
+    }
+    
+    private func readPC(advance: Bool = true) -> UInt8 {
+        let value = bus?.read(at: pc) ?? 0
+        
+        if advance {
+            pc += 1
+        }
+        
+        return value
     }
     
     /// Runs for exactly 1 cycle
-    public func clock() {
+    /// - returns: the state after running the current clock
+    @MainActor
+    public func clock() throws(XemuError) -> State {
+        switch state {
+            case .fetch:
+                let instruction = try fetchInstruction()
+                self.state = try handleFetchState(with: instruction)
+            case .prefetched(let instruction):
+                pc += 1
+                self.state = try handleFetchState(with: instruction)
+            case .immediate(let mnemonic, let value):
+                self.state = try handleImmediateState(mnemonic: mnemonic, value: value)
+            case .absolute(let mnemonic, let substate):
+                self.state = try handleAbsoluteState(mnemonic: mnemonic, substate: substate)
+            default:
+                throw .notImplemented
+        }
         
+        return state
     }
     
+    private func handleFetchState(with instruction: Instruction) throws(XemuError) -> State {
+        switch instruction.addressingMode {
+            case .immediate:
+                return .immediate(instruction.mnemonic, readPC())
+            case .absolute(let index):
+                if let index {
+                    throw .notImplemented
+                } else {
+                    switch instruction.mnemonic {
+                        case .JMP:
+                            return .absolute(instruction.mnemonic, .jmp(lo: nil))
+                        default:
+                            throw .notImplemented
+                    }
+                }
+            default:
+                throw .notImplemented
+        }
+    }
+    
+    @MainActor
+    private func handleImmediateState(mnemonic: Mnemonic, value: UInt8) throws(XemuError) -> State {
+        switch mnemonic {
+            case .LDX:
+                ldx(value)
+            case .LDY:
+                ldy(value)
+            default:
+                throw .notImplemented
+        }
+        
+        return .prefetched(try fetchInstruction(prefetching: true))
+    }
+    
+    private func handleAbsoluteState(mnemonic: Mnemonic, substate: AbsoluteStateType) throws(XemuError) -> State {
+        switch substate {
+            case .jmp(let lo):
+                guard let lo else {
+                    let lo = bus?.read(at: pc) ?? 0
+                    pc += 1
+                    return .absolute(mnemonic, .jmp(lo: lo))
+                }
+                
+                let hi = bus?.read(at: pc) ?? 0
+                let value = UInt16(hi) << 8 | UInt16(lo)
+                
+                jmp(to: value)
+                
+                return .fetch
+            default:
+                throw .notImplemented
+        }
+    }
+
     /// Reset Signal
     public func reset() {
         
@@ -415,6 +582,24 @@ public class Chip6502: Codable {
         
     }
     
+    private func jmp(to address: UInt16) {
+        pc = address
+    }
+    
+    private func ldx(_ value: UInt8) {
+        x = value
+        
+        setFlags(.zero, if: x == 0)
+//        setFlags(.negative, if: x & 0x80 != 0)
+    }
+    
+    private func ldy(_ value: UInt8) {
+        y = value
+        
+        setFlags(.zero, if: y == 0)
+        setFlags(.negative, if: y & 0x80 != 0)
+    }
+
     enum CodingKeys: CodingKey {
         case a
         case x
@@ -423,5 +608,51 @@ public class Chip6502: Codable {
         case pc
         case p
         case state
+    }
+}
+
+extension Chip6502 {
+    public func getRegisters() -> [RegisterInfo] {
+        [
+            .regular("A", size: 1, value: .u8(a)),
+            .regular("X", size: 1, value: .u8(x)),
+            .regular("Y", size: 1, value: .u8(y)),
+            .stack("S", size: 1, value: .u8(s)),
+            .programCounter("PC", size: 2, value: .u16(pc)),
+            .flags(
+                "P",
+                size: 1,
+                flags: [
+                    .init(mask: UInt(StatusFlag.carry.rawValue), acronym: "C", name: "Carry"),
+                    .init(mask: UInt(StatusFlag.zero.rawValue), acronym: "Z", name: "Zero"),
+                    .init(mask: UInt(StatusFlag.interrupt.rawValue), acronym: "I", name: "Interrupt"),
+                    .init(mask: UInt(StatusFlag.decimal.rawValue), acronym: "D", name: "Decimal"),
+                    .init(mask: UInt(StatusFlag.b.rawValue), acronym: "B", name: ""),
+                    .init(mask: UInt(StatusFlag.alwaysOne.rawValue), acronym: "1", name: ""),
+                    .init(mask: UInt(StatusFlag.overflow.rawValue), acronym: "V", name: "Overflow"),
+                    .init(mask: UInt(StatusFlag.negative.rawValue), acronym: "N", name: "Negative"),
+                ],
+                value: .u8(p)
+            )
+        ]
+    }
+    
+    public func setRegister(name: String, value: UInt64) {
+        switch name {
+            case "A":
+                a = UInt8(value & 0xff)
+            case "X":
+                x = UInt8(value & 0xff)
+            case "Y":
+                y = UInt8(value & 0xff)
+            case "S":
+                s = UInt8(value & 0xff)
+            case "PC":
+                pc = UInt16(value & 0xffff)
+            case "P":
+                p = UInt8(value & 0xff)
+            default:
+                print("Unknown register: \(name) = \(value)")
+        }
     }
 }

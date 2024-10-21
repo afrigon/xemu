@@ -1,10 +1,19 @@
-struct CommandConfiguration {
-    let name: String
-    let description: String
-}
+import XemuFoundation
 
 protocol Command {
-    var configuration: CommandConfiguration { get }
     
-    func run() throws
+    @MainActor
+    static var configuration: CommandConfiguration { get }
+    
+    init()
+    init(arguments: [String])
+    
+    @MainActor
+    func run(context: XemuCLI) throws(XemuError)
+}
+
+extension Command {
+    init(arguments: [String]) {
+        self.init()
+    }
 }

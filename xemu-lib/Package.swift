@@ -11,17 +11,36 @@ let package = Package(
         .tvOS(.v18)
     ],
     products: [
+        .library(name: "XemuFoundation", targets: ["XemuFoundation"]),
         .library(name: "XemuCore", targets: ["XemuCore"]),
-        .library(name: "XemuSwiftUI", targets: ["XemuSwiftUI"])
+        .library(name: "XemuDebugger", targets: ["XemuDebugger"]),
+        .library(name: "XemuSwiftUI", targets: ["XemuSwiftUI"]),
+        .library(name: "XemuNES", targets: ["XemuNES"])
     ],
     dependencies: [
         .package(url: "https://github.com/afrigon/XKit", branch: "main"),
         .package(url: "https://github.com/afrigon/stylx", branch: "main"),
     ],
     targets: [
+        // MARK: XemuFoundation
+        .target(
+            name: "XemuFoundation",
+            path: "Sources/XemuFoundation"
+        ),
+        .testTarget(
+            name: "XemuFoundationTests",
+            dependencies: [
+                "XemuFoundation"
+            ],
+            path: "Tests/XemuFoundation"
+        ),
+
         // MARK: XemuCore
         .target(
             name: "XemuCore",
+            dependencies: [
+                "XemuFoundation"
+            ],
             path: "Sources/XemuCore"
         ),
         .testTarget(
@@ -32,7 +51,24 @@ let package = Package(
             path: "Tests/XemuCore"
         ),
         
-        // MARK: XemuCore
+        // MARK: XemuDebugger
+        .target(
+            name: "XemuDebugger",
+            dependencies: [
+                "XemuCore",
+                "XemuFoundation"
+            ],
+            path: "Sources/XemuDebugger"
+        ),
+        .testTarget(
+            name: "XemuDebuggerTests",
+            dependencies: [
+                "XemuDebugger"
+            ],
+            path: "Tests/XemuDebugger"
+        ),
+
+        // MARK: XemuSwiftUI
         .target(
             name: "XemuSwiftUI",
             dependencies: [
@@ -53,14 +89,21 @@ let package = Package(
         // MARK: XemuNES
         .target(
             name: "XemuNES",
-            path: "Sources/XemuNES"
+            dependencies: [
+                "XemuDebugger"
+            ],
+            path: "Sources/XemuNES",
+            exclude: ["References"]
         ),
         .testTarget(
             name: "XemuNESTests",
             dependencies: [
                 "XemuNES"
             ],
-            path: "Tests/XemuNES"
+            path: "Tests/XemuNES",
+            resources: [
+                .copy("Data")
+            ]
         )
     ]
 )

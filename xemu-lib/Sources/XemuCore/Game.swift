@@ -1,6 +1,5 @@
 import Foundation
 import SwiftData
-import XemuCore
 
 @Model
 public class Game {

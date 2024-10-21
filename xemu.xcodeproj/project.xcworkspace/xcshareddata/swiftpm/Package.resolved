@@ -1,5 +1,5 @@
 {
-  "originHash" : "c3a2f4e892b4da4573cdb234b6a45a3e3485e9af127bdce92a1cebb83341cf1c",
+  "originHash" : "e77aac5eb8a7a3c25aca7d5682e2ef0495a6571a030b3ba0b35c542319f6dd3c",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -38,6 +38,15 @@
       }
     },
     {
+      "identity" : "prism",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/afrigon/Prism",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a28665bf8a40453c88aa6f6af138e80a3db14a83"
+      }
+    },
+    {
       "identity" : "routing-kit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/routing-kit.git",
@@ -52,7 +61,7 @@
       "location" : "https://github.com/afrigon/stylx",
       "state" : {
         "branch" : "main",
-        "revision" : "a71ebab939b7db802eb315c492f3cdbd8f268b03"
+        "revision" : "e378c69fdf8a757351237b9b5ff08055fe06bab3"
       }
     },
     {

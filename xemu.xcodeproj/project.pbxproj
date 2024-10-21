@@ -10,6 +10,7 @@
 		AD01196D2CB5957D00875153 /* stylx in Frameworks */ = {isa = PBXBuildFile; productRef = AD01196C2CB5957D00875153 /* stylx */; };
 		AD0119702CB5959100875153 /* XKit in Frameworks */ = {isa = PBXBuildFile; productRef = AD01196F2CB5959100875153 /* XKit */; };
 		AD0269122CC0D84700B25286 /* Vapor in Frameworks */ = {isa = PBXBuildFile; productRef = AD0269112CC0D84700B25286 /* Vapor */; };
+		AD0E151B2CC261EC003E415B /* XemuSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = AD0E151A2CC261EC003E415B /* XemuSwiftUI */; };
 		ADEF422F2CBDE32A008A1C26 /* XemuCore in Frameworks */ = {isa = PBXBuildFile; productRef = ADEF422E2CBDE32A008A1C26 /* XemuCore */; };
 /* End PBXBuildFile section */
 
@@ -78,6 +79,7 @@
 				AD0269122CC0D84700B25286 /* Vapor in Frameworks */,
 				AD0119702CB5959100875153 /* XKit in Frameworks */,
 				AD01196D2CB5957D00875153 /* stylx in Frameworks */,
+				AD0E151B2CC261EC003E415B /* XemuSwiftUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -152,6 +154,7 @@
 				AD01196F2CB5959100875153 /* XKit */,
 				ADEF422E2CBDE32A008A1C26 /* XemuCore */,
 				AD0269112CC0D84700B25286 /* Vapor */,
+				AD0E151A2CC261EC003E415B /* XemuSwiftUI */,
 			);
 			productName = xemu;
 			productReference = ADDFBCDD2CB4BC79007FAAD3 /* xemu.app */;
@@ -700,6 +703,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AD0269102CC0D84700B25286 /* XCRemoteSwiftPackageReference "vapor" */;
 			productName = Vapor;
+		};
+		AD0E151A2CC261EC003E415B /* XemuSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = XemuSwiftUI;
 		};
 		ADEF422E2CBDE32A008A1C26 /* XemuCore */ = {
 			isa = XCSwiftPackageProductDependency;

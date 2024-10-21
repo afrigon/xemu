@@ -23,6 +23,7 @@ class OpenVGDBService {
         sqlite3_close(db)
     }
     
+    @MainActor
     func getArtwork(_ name: String, system: SystemType) async -> Data? {
         guard let openVGDBIdentifier = system.openVGDBIdentifier, let release = try? getFirstRelease(matching: name.sanitizedFilename, for: openVGDBIdentifier) else {
             return nil
@@ -31,6 +32,7 @@ class OpenVGDBService {
         return await release.artworkURL.data()
     }
     
+    @MainActor
     func getFirstRelease(matching name: String, for system: String) throws(XemuError) -> OpenVGDBRelease? {
         let selectQuery = """
 SELECT RELEASES.releaseTitleName AS name, RELEASES.releaseCoverFront AS image, bm25(RELEASES_FTS) AS rank
@@ -68,6 +70,7 @@ LIMIT 1
         return release
     }
 
+    @MainActor
     func getReleases(like name: String, for system: String) throws(XemuError) -> [OpenVGDBRelease] {
         let selectQuery = """
 WITH RankedReleases AS (

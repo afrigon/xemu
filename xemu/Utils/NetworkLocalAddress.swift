@@ -13,7 +13,7 @@ class NetworkLocalAddress {
         return parseIfaddrs(ifaddr)
     }
     
-    static func parseIfaddrs(_ interface: UnsafeMutablePointer<ifaddrs>) -> String? {
+    private static func parseIfaddrs(_ interface: UnsafeMutablePointer<ifaddrs>) -> String? {
         let addrFamily = interface.pointee.ifa_addr.pointee.sa_family
         let name = String(cString: interface.pointee.ifa_name)
         
