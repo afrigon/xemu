@@ -1,15 +1,15 @@
-public class Cartridge: BusComponent {
-    let mapper: Mapper
-    
-    init(as file: iNesFile) {
-        mapper = Mapper.create(type: file.mapper)
-    }
-    
-    func read(at address: UInt16) -> UInt8 {
-        <#code#>
-    }
-    
-    func write(_ data: UInt8, at address: UInt16) {
-        <#code#>
-    }
-}
+//public class Cartridge: BusComponent {
+////    let mapper: Mapper
+//    
+//    init(as file: iNesFile) {
+////        mapper = Mapper.create(type: file.mapper)
+//    }
+//    
+//    func read(at address: u16) -> u8 {
+//
+//    }
+//    
+//    func write(_ data: u8, at address: u16) {
+//
+//    }
+//}

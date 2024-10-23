@@ -1,6 +1,8 @@
 import Prism
+import Foundation
 import XemuFoundation
 import XemuDebugger
+import XemuAsm
 
 struct DisassembleCommand: Command {
     static var configuration = CommandConfiguration(
@@ -46,48 +48,43 @@ struct DisassembleCommand: Command {
             }
             .first ?? 0
 
-        let instructions = emulator.disassemble(at: address, count: 8)
-        let prefixes = instructions.map {
-            $0.address == address ? " \(Prompts.rightArrow)" : "  "
-        }
-        let addresses = instructions.map {
-            $0.address.hex(prefix: "0x", padTo: 4)
-        }
-        let values = instructions.map {
-            $0.values.map { $0.hex(prefix: "", padTo: 2) }.joined(separator: " ")
-        }
-        let mnemonics = instructions.map(\.mnemonic)
-        let operands = instructions.map(\.operands)
+        let count = 12
+        let data = Data(emulator.getMemory()[address..<(address + (count * 3))]) // this is ugly but all instruction are at most 3 bytes on the 6502
+        let result: DisassemblyResult
         
-        let valuesMaxCount = values.map(\.count).max() ?? 0
-
-        for i in 0..<instructions.count {
-            let value = values[i].padding(toLength: valuesMaxCount, withPad: " ", startingAt: 0)
-            
-            let line = Prism(spacing: .custom) {
-                if instructions[i].address == address {
-                    ForegroundColor(.green(style: .bright)) {
-                        "\(prefixes[i])   \(addresses[i])   "
+        switch emulator.arch {
+            case .mos6502:
+                result = MOS6502.Disassembler(data: data).disassemble(offset: address)
+        }
+        
+        let space = "    "
+        for element in result.elements[0..<count] {
+            switch element {
+                case .instruction(let addr, let raw, let value):
+                    Output.shared.prism {
+                        ForegroundColor(addr == address ? .green : .white) {
+                            addr == address ? " \(Prompts.rightArrow)" : "  "
+                            space
+                            addr.hex(prefix: "0x", toLength: 4)
+                        }
+                        
+                        space
+                        
+                        ForegroundColor(addr == address ? .green : .gray) {
+                            raw
+                                .map { $0.hex(toLength: 2) }
+                                .joined(separator: " ")
+                                .padding(toLength: 8, withPad: " ", startingAt: 0)
+                        }
+                        
+                        space
+                        
+                        ForegroundColor(addr == address ? .green : .white) {
+                            value
+                        }
                     }
-                    ForegroundColor(.green(style: .default), value)
-                    ForegroundColor(.green(style: .bright)) {
-                        "   \(mnemonics[i]) \(operands[i])"
-                    }
-                } else {
-                    "\(prefixes[i])   \(addresses[i])   "
-                    ForegroundColor(.gray, value)
-                    "   \(mnemonics[i]) \(operands[i])"
-                }
-            }
-            
-            Output.shared.prism {
-                if instructions[i].address == address {
-                    ForegroundColor(.green(style: .bright)) {
-                        line.elements
-                    }
-                } else {
-                    line.elements
-                }
+                default:
+                    continue
             }
         }
     }

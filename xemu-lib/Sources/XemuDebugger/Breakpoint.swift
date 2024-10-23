@@ -1,5 +1,7 @@
+import XemuFoundation
+
 public struct Breakpoint: Identifiable {
-    public let id: UInt64
+    public let id: u64
     
-    let address: UInt64
+    let address: u64
 }

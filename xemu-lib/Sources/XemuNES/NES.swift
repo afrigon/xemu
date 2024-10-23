@@ -1,5 +1,7 @@
+import XemuFoundation
+
 public class NES: Codable, BusDelegate {
-    let cpu: Chip6502
+    let cpu: MOS6502
 //    let apu: APU
 //    let ppu: PPU
     let bus: Bus = Bus()
@@ -13,21 +15,21 @@ public class NES: Codable, BusDelegate {
     
     required public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        cpu = try container.decode(Chip6502.self, forKey: .cpu)
+        cpu = try container.decode(MOS6502.self, forKey: .cpu)
 //        apu = try container.decode(APU.self, forKey: .apu)
 //        ppu = try container.decode(PPU.self, forKey: .ppu)
         
         bus.delegate = self
-        cpu._bus = bus
+        cpu.bus = bus
 //        apu.bus = bus
 //        ppu.bus = bus
     }
     
-    func bus(bus: Bus, didSendReadSignalAt address: UInt16) -> UInt8 {
+    func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8 {
         return 0
     }
     
-    func bus(bus: Bus, didSendWriteSignalAt address: UInt16, _ data: UInt8) {
+    func bus(bus: Bus, didSendWriteSignalAt address: u16, _ data: u8) {
         
     }
     

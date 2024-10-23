@@ -41,7 +41,7 @@ public class BitIterator {
         return result
     }
     
-    public func takeByte() throws(XemuError) -> UInt8 {
+    public func takeByte() throws(XemuError) -> u8 {
         guard let byte = try takeByte(1).first else {
             throw .indexOutOfBounds
         }
@@ -49,7 +49,7 @@ public class BitIterator {
         return byte
     }
 
-    public func takeByte(_ n: Int) throws(XemuError) -> [UInt8] {
+    public func takeByte(_ n: Int) throws(XemuError) -> [u8] {
         guard index + n < data.count else {
             throw .indexOutOfBounds
         }

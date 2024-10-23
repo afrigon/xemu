@@ -100,13 +100,13 @@ public struct iNesFile: RomFile {
     }
 
     public static var fileExtensions: [String] = ["nes"]
-    public static var magic: [UInt8] = [0x4E, 0x45, 0x53, 0x1A]  // NES\x1A
+    public static var magic: [u8] = [0x4E, 0x45, 0x53, 0x1A]  // NES\x1A
     
     public static let pgrRomUnitSize = 0x4000
     public static let chrRomUnitSize = 0x2000
 
-    let pgrRomSize: UInt8
-    let chrRomSize: UInt8
+    let pgrRomSize: u8
+    let chrRomSize: u8
     
     let pgrRom: Data
     let chrRom: Data
@@ -159,7 +159,7 @@ public struct iNesFile: RomFile {
             case .iNes:
                 self.consoleType = ConsoleType(rawValue: consoleType)!
                 
-                guard let mapper = MapperType(rawValue: UInt16(mapperHi) << 4 | UInt16(mapperLo)) else {
+                guard let mapper = MapperType(rawValue: u16(mapperHi) << 4 | u16(mapperLo)) else {
                     throw .notImplemented
                 }
                 
@@ -199,7 +199,7 @@ public struct iNesFile: RomFile {
                 let submapper = try d.takeBit(4)
                 let mapperVeryHi = try d.takeBit(4)
                 
-                let mapper = UInt16(mapperVeryHi) << 8 | UInt16(mapperHi) << 4 | UInt16(mapperLo)
+                let mapper = u16(mapperVeryHi) << 8 | u16(mapperHi) << 4 | u16(mapperLo)
                 
                 // Flag 9
                 // Flag 10

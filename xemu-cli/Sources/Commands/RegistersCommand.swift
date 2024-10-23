@@ -35,7 +35,7 @@ struct RegistersCommand: Command {
         Output.shared.prism {
             ForegroundColor(.blue, "$\(register.name.padding(toLength: 2, withPad: " ", startingAt: 0))")
             ": "
-            "\(register.value.uint.hex(prefix: "0x", padTo: register.size * 2))"
+            "\(register.value.uint.hex(prefix: "0x", toLength: register.size * 2))"
         }
     }
     

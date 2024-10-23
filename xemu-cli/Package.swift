@@ -18,9 +18,10 @@ let package = Package(
             dependencies: [
                 "Clibedit",
                 .product(name: "Prism", package: "Prism"),
-                .product(name: "XemuFoundation", package: "XemuLib"),
+                .product(name: "XemuAsm", package: "XemuLib"),
                 .product(name: "XemuCore", package: "XemuLib"),
                 .product(name: "XemuDebugger", package: "XemuLib"),
+                .product(name: "XemuFoundation", package: "XemuLib"),
                 .product(name: "XemuNES", package: "XemuLib")
             ],
             path: "Sources"

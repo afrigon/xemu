@@ -1,6 +1,7 @@
 import Prism
 import XemuFoundation
 import XemuDebugger
+import XemuAsm
 
 struct StackCommand: Command {
     static var configuration = CommandConfiguration(
@@ -33,14 +34,14 @@ struct StackCommand: Command {
         
         printStack(
             memory: emulator.getMemory(),
-            stackBaseAddress: emulator.stackBaseAddress,
+            stackBaseAddress: emulator.arch.stackBaseAddress,
             sp: sp
         )
     }
     
     @MainActor
     private func printStack(
-        memory: [UInt8],
+        memory: [u8],
         stackBaseAddress: Int,
         sp: RegularRegister,
         countBefore: Int = 0,
@@ -52,11 +53,11 @@ struct StackCommand: Command {
         
         for address in start..<end {
             Output.shared.prism {
-                ForegroundColor(.cyan, address.hex(prefix: "0x", padTo: 4))
+                ForegroundColor(.cyan, address.hex(prefix: "0x", toLength: 4))
                 Prompts.verticalLine
-                (address - start).hex(prefix: "0x", padTo: 2)
+                (address - start).hex(prefix: "0x", toLength: 2)
                 ": "
-                memory[address].hex(prefix: "0x", padTo: 2)
+                memory[address].hex(prefix: "0x", toLength: 2)
                 
                 if address == stackEffectiveAddress {
                     ForegroundColor(.blue(style: .bright), "   \(Prompts.leftArrow) $\(sp.name)")

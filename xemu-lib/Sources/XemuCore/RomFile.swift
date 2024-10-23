@@ -7,7 +7,7 @@ public protocol RomFile {
     static var fileExtensions: [String] { get }
     
     @MainActor
-    static var magic: [UInt8] { get }
+    static var magic: [u8] { get }
     
     @MainActor
     init(_ data: Data) throws(XemuError)
@@ -40,7 +40,7 @@ extension RomFile {
                 return false
             }
             
-            guard let data = $0.bindMemory(to: UInt8.self).baseAddress else {
+            guard let data = $0.bindMemory(to: u8.self).baseAddress else {
                 return false
             }
             

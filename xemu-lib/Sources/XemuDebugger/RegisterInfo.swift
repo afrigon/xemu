@@ -1,4 +1,5 @@
 import Foundation
+import XemuFoundation
 
 public enum RegisterInfo: Identifiable {
     case regular(RegularRegister)
@@ -53,11 +54,10 @@ public struct RegularRegister: Identifiable {
 }
 
 public enum RegisterValue {
-    case u8(UInt8)
-    case u16(UInt16)
-    case u32(UInt32)
-    case u64(UInt64)
-    case u128(UInt128)
+    case u8(u8)
+    case u16(u16)
+    case u32(u32)
+    case u64(u64)
     
     public var int: Int {
         switch self {
@@ -68,8 +68,6 @@ public enum RegisterValue {
             case .u32(let value):
                 Int(value)
             case .u64(let value):
-                Int(value)
-            case .u128(let value):
                 Int(value)
         }
     }
@@ -83,8 +81,6 @@ public enum RegisterValue {
             case .u32(let value):
                 UInt(value)
             case .u64(let value):
-                UInt(value)
-            case .u128(let value):
                 UInt(value)
         }
     }
