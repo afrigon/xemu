@@ -3,7 +3,6 @@ import XemuFoundation
 struct InfoCommand: Command {
     static var configuration = CommandConfiguration(
         name: "info",
-        aliases: ["i"],
         description: "Lists information about the argument, or lists what possible arguments are if none are provided."
     )
     
@@ -23,9 +22,13 @@ struct InfoCommand: Command {
                 case "stack", "s":
                     try StackCommand().run(context: context)
                 case "registers", "reg", "r":
-                    try RegistersCommand().run(context: context)
+                    try RegisterCommand().run(context: context)
                 case "break", "b":
-                    print("")
+                    Output.shared.print("List of info subcommands:")
+                    Output.shared.print("")
+                    Output.shared.print("info [b]reak -- Status of breakpoints")
+                    Output.shared.print("info [r]egister -- List of registers and their content")
+                    Output.shared.print("info [s]tack -- Backtrace of the stack")
                 default:
                     throw .unknownCommand
             }

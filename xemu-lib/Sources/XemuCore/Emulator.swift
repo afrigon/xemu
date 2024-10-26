@@ -1,11 +1,8 @@
 import Foundation
 import XemuFoundation
 
-public protocol Emulator {
-    
-    @MainActor
-    func load(program: Data) throws(XemuError)
-    
-    @MainActor
+public protocol Emulator: Codable {
+    func load(program: Data, saveData: Data?) throws(XemuError)
+    func reset()
     func clock() throws(XemuError)
 }

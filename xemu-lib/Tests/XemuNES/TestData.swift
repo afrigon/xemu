@@ -16,6 +16,7 @@ class TestData {
         let data = try Data(contentsOf: url)
         
         try nes.load(program: data)
+        nes.reset()
         
         return nes
     }

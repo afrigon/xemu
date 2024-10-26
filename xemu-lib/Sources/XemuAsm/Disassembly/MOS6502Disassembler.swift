@@ -11,8 +11,8 @@ extension MOS6502 {
             self.pc = 0x0000
         }
         
-        public func disassemble(offset: Int = 0x0000) -> DisassemblyResult {
-            var elements: [DisassemblyResult.Element] = []
+        public func disassemble(offset: Int = 0x0000) -> DisassemblyResult<MOS6502.Instruction> {
+            var elements: [DisassemblyResult<MOS6502.Instruction>.Element] = []
             pc = 0
 
             while data.count > pc {
@@ -21,10 +21,10 @@ extension MOS6502 {
                 
                 let instruction = decode(opcode)
                 
-                elements.append(.instruction(
+                elements.append(.init(
                     address: offset + start,
-                    raw: instruction.bytes,
-                    value: instruction.asm(offset: start)
+                    raw: [u8](data[start..<pc]),
+                    value: instruction
                 ))
             }
             
@@ -208,6 +208,67 @@ extension MOS6502 {
                 case 0xF9: .sbc(.absoluteY(read16()))
                 case 0xFD: .sbc(.absoluteX(read16()))
                 case 0xFE: .inc(.absoluteX(read16()))
+                    
+                // Unofficial Opcodes
+                case 0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xFA: .unofficialImmediateNop
+                case 0x80: .unofficialNop(.immediate(read8()))
+                case 0x0C: .unofficialNop(.absolute(read16()))
+                case 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC: .unofficialNop(.absoluteX(read16()))
+                case 0x04, 0x44, 0x64: .unofficialNop(.zeroPage(read8()))
+                case 0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4: .unofficialNop(.zeroPageX(read8()))
+                case 0xEB: .unofficialImmediateSbc(read8())
+                case 0xA7: .lax(.zeroPage(read8()))
+                case 0xB7: .lax(.zeroPageY(read8()))
+                case 0xAF: .lax(.absolute(read16()))
+                case 0xBF: .lax(.absoluteY(read16()))
+                case 0xA3: .lax(.indexedIndirect(read8()))
+                case 0xB3: .lax(.indirectIndexed(read8()))
+                case 0xC7: .dcp(.zeroPage(read8()))
+                case 0xD7: .dcp(.zeroPageX(read8()))
+                case 0xCF: .dcp(.absolute(read16()))
+                case 0xDF: .dcp(.absoluteX(read16()))
+                case 0xDB: .dcp(.absoluteY(read16()))
+                case 0xC3: .dcp(.indexedIndirect(read8()))
+                case 0xD3: .dcp(.indirectIndexed(read8()))
+                case 0x87: .sax(.zeroPage(read8()))
+                case 0x97: .sax(.zeroPageY(read8()))
+                case 0x8F: .sax(.absolute(read16()))
+                case 0x83: .sax(.indexedIndirect(read8()))
+                case 0xE7: .isb(.zeroPage(read8()))
+                case 0xF7: .isb(.zeroPageX(read8()))
+                case 0xEF: .isb(.absolute(read16()))
+                case 0xFF: .isb(.absoluteX(read16()))
+                case 0xFB: .isb(.absoluteY(read16()))
+                case 0xE3: .isb(.indexedIndirect(read8()))
+                case 0xF3: .isb(.indirectIndexed(read8()))
+                case 0x07: .slo(.zeroPage(read8()))
+                case 0x17: .slo(.zeroPageX(read8()))
+                case 0x0F: .slo(.absolute(read16()))
+                case 0x1F: .slo(.absoluteX(read16()))
+                case 0x1B: .slo(.absoluteY(read16()))
+                case 0x03: .slo(.indexedIndirect(read8()))
+                case 0x13: .slo(.indirectIndexed(read8()))
+                case 0x27: .rla(.zeroPage(read8()))
+                case 0x37: .rla(.zeroPageX(read8()))
+                case 0x2F: .rla(.absolute(read16()))
+                case 0x3F: .rla(.absoluteX(read16()))
+                case 0x3B: .rla(.absoluteY(read16()))
+                case 0x23: .rla(.indexedIndirect(read8()))
+                case 0x33: .rla(.indirectIndexed(read8()))
+                case 0x47: .sre(.zeroPage(read8()))
+                case 0x57: .sre(.zeroPageX(read8()))
+                case 0x4F: .sre(.absolute(read16()))
+                case 0x5F: .sre(.absoluteX(read16()))
+                case 0x5B: .sre(.absoluteY(read16()))
+                case 0x53: .sre(.indirectIndexed(read8()))
+                case 0x43: .sre(.indexedIndirect(read8()))
+                case 0x67: .rra(.zeroPage(read8()))
+                case 0x77: .rra(.zeroPageX(read8()))
+                case 0x6F: .rra(.absolute(read16()))
+                case 0x7F: .rra(.absoluteX(read16()))
+                case 0x7B: .rra(.absoluteY(read16()))
+                case 0x63: .rra(.indexedIndirect(read8()))
+                case 0x73: .rra(.indirectIndexed(read8()))
                 default: .bad
             }
         }

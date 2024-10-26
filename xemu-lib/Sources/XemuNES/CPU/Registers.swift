@@ -12,7 +12,7 @@ class Registers: Codable {
     var y: u8 = 0
     
     /// Stack Pointer Register
-    var s: u8 = 0xFD  // 0x00 - 3
+    var s: u8 = 0x00
     
     /// Program Counter Register
     var pc: u16 = 0xFFFC

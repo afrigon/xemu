@@ -49,8 +49,8 @@ struct DisassembleCommand: Command {
             .first ?? 0
 
         let count = 12
-        let data = Data(emulator.getMemory()[address..<(address + (count * 3))]) // this is ugly but all instruction are at most 3 bytes on the 6502
-        let result: DisassemblyResult
+        let data = Data(emulator.getMemory(in: address..<(address + (count * 3)))) // this is ugly but all instruction are at most 3 bytes on the 6502
+        let result: DisassemblyResult<MOS6502.Instruction>
         
         switch emulator.arch {
             case .mos6502:
@@ -58,33 +58,28 @@ struct DisassembleCommand: Command {
         }
         
         let space = "    "
-        for element in result.elements[0..<count] {
-            switch element {
-                case .instruction(let addr, let raw, let value):
-                    Output.shared.prism {
-                        ForegroundColor(addr == address ? .green : .white) {
-                            addr == address ? " \(Prompts.rightArrow)" : "  "
-                            space
-                            addr.hex(prefix: "0x", toLength: 4)
-                        }
-                        
-                        space
-                        
-                        ForegroundColor(addr == address ? .green : .gray) {
-                            raw
-                                .map { $0.hex(toLength: 2) }
-                                .joined(separator: " ")
-                                .padding(toLength: 8, withPad: " ", startingAt: 0)
-                        }
-                        
-                        space
-                        
-                        ForegroundColor(addr == address ? .green : .white) {
-                            value
-                        }
-                    }
-                default:
-                    continue
+        for element in result.elements.prefix(count) {
+            Output.shared.prism {
+                ForegroundColor(element.address == address ? .green : .white) {
+                    element.address == address ? " \(Prompts.rightArrow)" : "  "
+                    space
+                    element.address.hex(prefix: "0x", toLength: 4)
+                }
+                
+                space
+                
+                ForegroundColor(element.address == address ? .green : .gray) {
+                    element.raw
+                        .map { $0.hex(toLength: 2) }
+                        .joined(separator: " ")
+                        .padding(toLength: 8, withPad: " ", startingAt: 0)
+                }
+                
+                space
+                
+                ForegroundColor(element.address == address ? .green : .white) {
+                    element.value.asm(offset: address)
+                }
             }
         }
     }

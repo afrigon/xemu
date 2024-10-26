@@ -1,50 +1,55 @@
 import XemuFoundation
 
-protocol BusComponent {
-    func read(at address: u16) -> u8
-    func write(_ data: u8, at address: u16)
-}
-
 protocol BusDelegate: AnyObject {
-    func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8
+    func nmiSignal() -> Bool
+    func irqSignal() -> Bool
+    
+    func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8?
     func bus(bus: Bus, didSendWriteSignalAt address: u16, _ data: u8)
 }
 
 class Bus {
+    var openBus: u8 = 0x00
+    
     weak var delegate: BusDelegate!
     
+    public func nmiSignal() -> Bool {
+        delegate.nmiSignal()
+    }
+    
+    public func irqSignal() -> Bool {
+        delegate.irqSignal()
+    }
+
+    @discardableResult
     public func read(at address: u16) -> u8 {
-        delegate.bus(bus: self, didSendReadSignalAt: address)
+        guard let data = delegate.bus(bus: self, didSendReadSignalAt: address) else {
+            return openBus
+        }
+        
+        openBus = data
+        return data
     }
     
     public func write(_ data: u8, at address: u16) {
         delegate.bus(bus: self, didSendWriteSignalAt: address, data)
     }
     
-    public func read16(at address: u16) -> u16 {
-        let lo = u16(self.read(at: address))
-        let hi = u16(self.read(at: address + 1))
-
-        return hi << 8 | lo
-    }
-
-    public func write16(_ data: u16, at address: u16) {
-        let data = data.p16(endianess: .little)
+    public func readString(at address: u16) -> String {
+        var result: String = ""
+        var i: u16 = 0
         
-        self.write(data[0], at: address)
-        self.write(data[1], at: address + 1)
-    }
-
-    public func read16Glitched(at address: u16) -> u16 {
-        
-        // 6502 hardware bug, instead of reading from 0xC0FF/0xC100 it reads from 0xC0FF/0xC000
-        if address & 0xFF == 0xFF {
-            let lo = u16(self.read(at: address))
-            let hi = u16(self.read(at: address & 0xFF00))
+        while true {
+            let data = read(at: address &+ i)
             
-            return hi << 8 | lo
+            if data == 0x00 {
+                break
+            }
+            
+            result += String(UnicodeScalar(data))
+            i &+= 1
         }
-
-        return self.read16(at: address)
+        
+        return result
     }
 }

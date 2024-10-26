@@ -18,6 +18,7 @@ public enum XemuError: Int, Error {
     case invalidState
     case busDisconnected
     case emulatorHalted
+    case invalidArguments
 
     public var domain: String {
         "app.frigon.xemu.XemuError"
@@ -63,6 +64,8 @@ public enum XemuError: Int, Error {
                 "The bus of the emulator was disconnection and cannot continue running."
             case .emulatorHalted:
                 "The emulator has halted."
+            case .invalidArguments:
+                "Cannot parse the given argument."
         }
     }
 }

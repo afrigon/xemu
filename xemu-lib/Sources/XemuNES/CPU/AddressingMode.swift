@@ -72,8 +72,7 @@ extension MOS6502 {
             case 3:
                 state.hi = read8()
             case 4:
-                let address = state.data
-                fn(bus.read(at: address))
+                fn(bus.read(at: state.data))
                 state.tick = 0
             default:
                 break
@@ -117,23 +116,137 @@ extension MOS6502 {
     // MARK: Absolute Indexed X Addressing Mode
     
     func handleAbsoluteIndexedXRead(_ fn: ReadOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.lo = read8()
+            case 3:
+                state.hi = read8()
+                state.temp = state.hi
+                state.data &+= u16(registers.x)
+            case 4:
+                // check if the hi byte of the effective address was changed by the index
+                if state.temp == state.hi {
+                    fn(bus.read(at: state.data))
+                    state.tick = 0
+                } else {
+                    bus.read(at: u16(state.temp) << 8 | u16(state.lo))
+                }
+            case 5:
+                fn(bus.read(at: state.data))
+                state.tick = 0
+            default:
+                break
+        }
     }
     
     func handleAbsoluteIndexedXModify(_ fn: ModifyOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.lo = read8()
+            case 3:
+                state.hi = read8()
+                state.temp = state.hi
+                state.data &+= u16(registers.x)
+            case 4:
+                bus.read(at: u16(state.temp) << 8 | u16(state.lo))
+            case 5:
+                state.temp = bus.read(at: state.data)
+            case 6:
+                bus.write(state.temp, at: state.data)
+                state.temp = fn(state.temp)
+            case 7:
+                bus.write(state.temp, at: state.data)
+                state.tick = 0
+            default:
+                break
+        }
     }
     
     func handleAbsoluteIndexedXWrite(_ fn: WriteOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.lo = read8()
+            case 3:
+                state.hi = read8()
+                state.temp = state.hi
+                state.data &+= u16(registers.x)
+            case 4:
+                // check if the hi byte of the effective address was changed by the index
+                bus.read(at: u16(state.temp) << 8 | u16(state.lo))
+            case 5:
+                bus.write(fn(), at: state.data)
+                state.tick = 0
+            default:
+                break
+        }
     }
     
     // MARK: Absolute Indexed Y Addressing Mode
     
     func handleAbsoluteIndexedYRead(_ fn: ReadOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.lo = read8()
+            case 3:
+                state.hi = read8()
+                state.temp = state.hi
+                state.data &+= u16(registers.y)
+            case 4:
+                // check if the high byte of the effective address was changed by the index
+                if state.temp == state.hi {
+                    fn(bus.read(at: state.data))
+                    state.tick = 0
+                } else {
+                    bus.read(at: u16(state.temp) << 8 | u16(state.lo))
+                }
+            case 5:
+                fn(bus.read(at: state.data))
+                state.tick = 0
+            default:
+                break
+        }
     }
     
     func handleAbsoluteIndexedYModify(_ fn: ModifyOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.lo = read8()
+            case 3:
+                state.hi = read8()
+                state.temp = state.hi
+                state.data &+= u16(registers.y)
+            case 4:
+                bus.read(at: u16(state.temp) << 8 | u16(state.lo))
+            case 5:
+                state.temp = bus.read(at: state.data)
+            case 6:
+                bus.write(state.temp, at: state.data)
+                state.temp = fn(state.temp)
+            case 7:
+                bus.write(state.temp, at: state.data)
+                state.tick = 0
+            default:
+                break
+        }
     }
     
     func handleAbsoluteIndexedYWrite(_ fn: WriteOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.lo = read8()
+            case 3:
+                state.hi = read8()
+                state.temp = state.hi
+                state.data &+= u16(registers.y)
+            case 4:
+                // check if the hi byte of the effective address was changed by the index
+                bus.read(at: u16(state.temp) << 8 | u16(state.lo))
+            case 5:
+                bus.write(fn(), at: state.data)
+                state.tick = 0
+            default:
+                break
+        }
     }
 
     // MARK: Zero Page Addressing Mode
@@ -186,7 +299,7 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                _ = bus.read(at: u16(state.lo))
+                bus.read(at: u16(state.lo))
                 state.lo &+= registers.x
             case 4:
                 fn(bus.read(at: u16(state.lo)))
@@ -201,7 +314,7 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                _ = bus.read(at: u16(state.lo))
+                bus.read(at: u16(state.lo))
                 state.lo &+= registers.x
             case 4:
                 state.temp = bus.read(at: u16(state.lo))
@@ -221,7 +334,7 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                _ = bus.read(at: u16(state.lo))
+                bus.read(at: u16(state.lo))
                 state.lo &+= registers.x
             case 4:
                 bus.write(fn(), at: u16(state.lo))
@@ -238,7 +351,7 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                _ = bus.read(at: u16(state.lo))
+                bus.read(at: u16(state.lo))
                 state.lo &+= registers.y
             case 4:
                 fn(bus.read(at: u16(state.lo)))
@@ -253,7 +366,7 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                _ = bus.read(at: u16(state.lo))
+                bus.read(at: u16(state.lo))
                 state.lo &+= registers.y
             case 4:
                 state.temp = bus.read(at: u16(state.lo))
@@ -273,7 +386,7 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                _ = bus.read(at: u16(state.lo))
+                bus.read(at: u16(state.lo))
                 state.lo &+= registers.y
             case 4:
                 bus.write(fn(), at: u16(state.lo))
@@ -286,23 +399,140 @@ extension MOS6502 {
     // MARK: Indexed Indirect (X) Addressing Mode
     
     func handleIndexedIndirectRead(_ fn: ReadOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.lo = read8()
+            case 3:
+                bus.read(at: u16(state.lo))
+                state.lo &+= registers.x
+            case 4:
+                state.temp = bus.read(at: u16(state.lo))
+            case 5:
+                state.hi = bus.read(at: u16(state.lo &+ 1))
+                state.lo = state.temp
+            case 6:
+                fn(bus.read(at: state.data))
+                state.tick = 0
+            default:
+                break
+        }
     }
     
     func handleIndexedIndirectModify(_ fn: ModifyOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.lo = read8()
+            case 3:
+                bus.read(at: u16(state.lo))
+                state.lo &+= registers.x
+            case 4:
+                state.temp = bus.read(at: u16(state.lo))
+            case 5:
+                state.hi = bus.read(at: u16(state.lo &+ 1))
+                state.lo = state.temp
+            case 6:
+                state.temp = bus.read(at: state.data)
+            case 7:
+                bus.write(state.temp, at: state.data)
+                state.temp = fn(state.temp)
+            case 8:
+                bus.write(state.temp, at: state.data)
+                state.tick = 0
+            default:
+                break
+        }
     }
     
     func handleIndexedIndirectWrite(_ fn: WriteOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.lo = read8()
+            case 3:
+                bus.read(at: u16(state.lo))
+                state.lo &+= registers.x
+            case 4:
+                state.temp = bus.read(at: u16(state.lo))
+            case 5:
+                state.hi = bus.read(at: u16(state.lo &+ 1))
+                state.lo = state.temp
+            case 6:
+                bus.write(fn(), at: state.data)
+                state.tick = 0
+            default:
+                break
+        }
     }
 
     // MARK: Indirect Indexed (Y) Addressing Mode
     
     func handleIndirectIndexedRead(_ fn: ReadOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.temp = read8()
+            case 3:
+                state.lo = bus.read(at: u16(state.temp))
+            case 4:
+                state.hi = bus.read(at: u16(state.temp &+ 1))
+                state.temp = state.hi
+                state.data &+= u16(registers.y)
+            case 5:
+                if state.hi == state.temp {
+                    fn(bus.read(at: state.data))
+                    state.tick = 0
+                } else {
+                    bus.read(at: u16(state.temp) << 8 | u16(state.lo))
+                }
+            case 6:
+                fn(bus.read(at: state.data))
+                state.tick = 0
+            default:
+                break
+        }
     }
     
     func handleIndirectIndexedModify(_ fn: ModifyOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.temp = read8()
+            case 3:
+                state.lo = bus.read(at: u16(state.temp))
+            case 4:
+                state.hi = bus.read(at: u16(state.temp &+ 1))
+                state.temp = state.hi
+                state.data &+= u16(registers.y)
+            case 5:
+                bus.read(at: u16(state.temp) << 8 | u16(state.lo))
+            case 6:
+                state.temp = bus.read(at: state.data)
+            case 7:
+                bus.write(state.temp, at: state.data)
+                state.temp = fn(state.temp)
+            case 8:
+                bus.write(state.temp, at: state.data)
+                state.tick = 0
+            default:
+                break
+        }
     }
     
     func handleIndirectIndexedWrite(_ fn: WriteOpcodeHandler) {
+        switch state.tick {
+            case 2:
+                state.temp = read8()
+            case 3:
+                state.lo = bus.read(at: u16(state.temp))
+            case 4:
+                state.hi = bus.read(at: u16(state.temp &+ 1))
+                state.temp = state.hi
+                state.data &+= u16(registers.y)
+            case 5:
+                bus.read(at: u16(state.temp) << 8 | u16(state.lo))
+            case 6:
+                bus.write(fn(), at: state.data)
+                state.tick = 0
+            default:
+                break
+        }
     }
 }
 

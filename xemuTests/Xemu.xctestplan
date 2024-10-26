@@ -1,0 +1,78 @@
+{
+  "configurations" : [
+    {
+      "id" : "170AC8E4-AAD4-41D6-AEE4-E95D36A4931A",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "defaultTestExecutionTimeAllowance" : 60,
+    "testExecutionOrdering" : "random",
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:xemu-lib",
+        "identifier" : "XemuDebuggerTests",
+        "name" : "XemuDebuggerTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:xemu-lib",
+        "identifier" : "XemuSwiftUITests",
+        "name" : "XemuSwiftUITests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:xemu.xcodeproj",
+        "identifier" : "ADDFBCED2CB4BC7A007FAAD3",
+        "name" : "XemuTests"
+      }
+    },
+    {
+      "skippedTests" : {
+        "suites" : [
+          {
+            "name" : "MOS6502Tests",
+            "testFunctions" : [
+              "blargg_instrs_v5()"
+            ]
+          }
+        ]
+      },
+      "target" : {
+        "containerPath" : "container:xemu-lib",
+        "identifier" : "XemuNESTests",
+        "name" : "XemuNESTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:xemu-lib",
+        "identifier" : "XemuFoundationTests",
+        "name" : "XemuFoundationTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:xemu-lib",
+        "identifier" : "XemuCoreTests",
+        "name" : "XemuCoreTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:xemu-lib",
+        "identifier" : "XemuAsmTests",
+        "name" : "XemuAsmTests"
+      }
+    }
+  ],
+  "version" : 1
+}

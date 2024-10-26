@@ -2,12 +2,21 @@ import Prism
 import XemuFoundation
 import XemuDebugger
 
-struct RegistersCommand: Command {
+struct RegisterReadCommand: Command {
     static var configuration = CommandConfiguration(
-        name: "registers",
-        aliases: ["reg", "r"],
-        description: "Display the status of the cpu registers"
+        name: "read",
+        description: "Dump the contents of one or more register values. If no register is specified, dumps them all."
     )
+    
+    let registerName: String?
+    
+    init() {
+        registerName = nil
+    }
+    
+    init(arguments: [String]) {
+        registerName = arguments.first
+    }
     
     func run(context: XemuCLI) throws(XemuError) {
         guard let emulator = context.emulator else {
@@ -16,16 +25,31 @@ struct RegistersCommand: Command {
         
         let registers = emulator.getRegisters()
         
-        for register in registers {
-            switch register {
-                case .regular(let r):
-                    printRegister(r)
-                case .stack(let r):
-                    printRegister(r)
-                case .programCounter(let r):
-                    printRegister(r)
-                case .flags(let r):
-                    printFlagRegister(r)
+        if let registerName {
+            for register in registers where register.id.lowercased() == registerName.lowercased() {
+                switch register {
+                    case .regular(let r):
+                        printRegister(r)
+                    case .stack(let r):
+                        printRegister(r)
+                    case .programCounter(let r):
+                        printRegister(r)
+                    case .flags(let r):
+                        printFlagRegister(r)
+                }
+            }
+        } else {
+            for register in registers {
+                switch register {
+                    case .regular(let r):
+                        printRegister(r)
+                    case .stack(let r):
+                        printRegister(r)
+                    case .programCounter(let r):
+                        printRegister(r)
+                    case .flags(let r):
+                        printFlagRegister(r)
+                }
             }
         }
     }

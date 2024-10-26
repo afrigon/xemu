@@ -99,17 +99,18 @@ public struct iNesFile: RomFile {
         case reservedC
     }
 
-    public static var fileExtensions: [String] = ["nes"]
-    public static var magic: [u8] = [0x4E, 0x45, 0x53, 0x1A]  // NES\x1A
+    public static let fileExtensions: [String] = ["nes"]
+    public static let magic: [u8] = [0x4E, 0x45, 0x53, 0x1A]  // NES\x1A
     
     public static let pgrRomUnitSize = 0x4000
     public static let chrRomUnitSize = 0x2000
 
-    let pgrRomSize: u8
-    let chrRomSize: u8
-    
-    let pgrRom: Data
-    let chrRom: Data
+    let wramSize: u8
+    let pgrromSize: u8
+    let chrromSize: u8
+
+    let pgrrom: Data
+    let chrrom: Data
 
     // Flag 6
     
@@ -130,7 +131,6 @@ public struct iNesFile: RomFile {
 
     // Flag 8
 
-    @MainActor
     public init(_ data: Data) throws(XemuError) {
         let d = BitIterator(data: data)
         
@@ -140,8 +140,8 @@ public struct iNesFile: RomFile {
             throw .fileFormatError
         }
         
-        pgrRomSize = try d.takeByte()
-        chrRomSize = try d.takeByte()
+        pgrromSize = try d.takeByte()
+        chrromSize = try d.takeByte()
         
         // Flag 6
         let mapperLo = try d.takeBit(4)
@@ -167,7 +167,7 @@ public struct iNesFile: RomFile {
                 
                 // TODO: double check past this
                 // Flag 8
-                let pgrRamSize = try d.takeByte()
+                wramSize = try d.takeByte()
                 
                 // Flag 9
                 d.advanceBit(by: 7)
@@ -182,25 +182,29 @@ public struct iNesFile: RomFile {
                     d.advanceByte(by: 512)
                 }
                 
-                let pgrRomStart = d.index
-                let pgrRomCount = iNesFile.pgrRomUnitSize * Int(pgrRomSize)
-                d.advanceByte(by: pgrRomCount)
-                let pgrRomEnd = d.index
-                pgrRom = data.subdata(in: pgrRomStart..<pgrRomEnd)
+                let pgrromStart = d.index
+                let pgrromCount = iNesFile.pgrRomUnitSize * Int(pgrromSize)
+                d.advanceByte(by: pgrromCount)
+                let pgrromEnd = d.index
+                pgrrom = data.subdata(in: pgrromStart..<pgrromEnd)
                 
-                let chrRomStart = d.index
-                let chrRomCount = iNesFile.chrRomUnitSize * Int(chrRomSize)
-                d.advanceByte(by: chrRomCount)
-                let chrRomEnd = d.index
-                chrRom = data.subdata(in: chrRomStart..<chrRomEnd)
+                let chrromStart = d.index
+                let chrromCount = iNesFile.chrRomUnitSize * Int(chrromSize)
+                d.advanceByte(by: chrromCount)
+                let chrromEnd = d.index
+                chrrom = data.subdata(in: chrromStart..<chrromEnd)
             case .nes20:
                 
                 // Flag 8
                 let submapper = try d.takeBit(4)
                 let mapperVeryHi = try d.takeBit(4)
                 
-                let mapper = u16(mapperVeryHi) << 8 | u16(mapperHi) << 4 | u16(mapperLo)
+                guard let mapper = MapperType(rawValue: u16(mapperVeryHi) << 8 | u16(mapperHi) << 4 | u16(mapperLo)) else {
+                    throw .notImplemented
+                }
                 
+                self.mapper = mapper
+
                 // Flag 9
                 // Flag 10
                 // Flag 11

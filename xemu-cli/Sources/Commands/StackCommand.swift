@@ -6,7 +6,6 @@ import XemuAsm
 struct StackCommand: Command {
     static var configuration = CommandConfiguration(
         name: "stack",
-        aliases: ["s"],
         description: "Display memory around the stack pointer"
     )
     
@@ -32,11 +31,12 @@ struct StackCommand: Command {
             return
         }
         
-        printStack(
-            memory: emulator.getMemory(),
-            stackBaseAddress: emulator.arch.stackBaseAddress,
-            sp: sp
-        )
+        // TODO: redo this
+//        printStack(
+//            memory: emulator.getMemory,
+//            stackBaseAddress: emulator.arch.stackBaseAddress,
+//            sp: sp
+//        )
     }
     
     @MainActor

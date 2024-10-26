@@ -34,18 +34,25 @@
 /* Begin PBXFileReference section */
 		AD1C9F082CBDEE0700229258 /* xemu-cli */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "xemu-cli"; sourceTree = "<group>"; };
 		AD2B2DCF2CB7889C00783899 /* xemu-lib */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "xemu-lib"; sourceTree = "<group>"; };
-		ADDFBCDD2CB4BC79007FAAD3 /* xemu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = xemu.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		ADDFBCEE2CB4BC7A007FAAD3 /* xemuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = xemuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		ADDFBCF82CB4BC7A007FAAD3 /* xemuUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = xemuUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		ADDFBCDD2CB4BC79007FAAD3 /* Xemu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Xemu.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		ADDFBCEE2CB4BC7A007FAAD3 /* XemuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XemuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		ADDFBCF82CB4BC7A007FAAD3 /* XemuUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XemuUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AD0E764B2CB5D2C400B24138 /* Exceptions for "xemu" folder in "xemu" target */ = {
+		AD0E764B2CB5D2C400B24138 /* Exceptions for "xemu" folder in "Xemu" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Resources/Info.plist,
 			);
-			target = ADDFBCDC2CB4BC79007FAAD3 /* xemu */;
+			target = ADDFBCDC2CB4BC79007FAAD3 /* Xemu */;
+		};
+		ADFCA7E02CCB470700245EC2 /* Exceptions for "xemuTests" folder in "XemuTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Xemu.xctestplan,
+			);
+			target = ADDFBCED2CB4BC7A007FAAD3 /* XemuTests */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -53,13 +60,16 @@
 		ADDFBCDF2CB4BC79007FAAD3 /* xemu */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AD0E764B2CB5D2C400B24138 /* Exceptions for "xemu" folder in "xemu" target */,
+				AD0E764B2CB5D2C400B24138 /* Exceptions for "xemu" folder in "Xemu" target */,
 			);
 			path = xemu;
 			sourceTree = "<group>";
 		};
 		ADDFBCF12CB4BC7A007FAAD3 /* xemuTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				ADFCA7E02CCB470700245EC2 /* Exceptions for "xemuTests" folder in "XemuTests" target */,
+			);
 			path = xemuTests;
 			sourceTree = "<group>";
 		};
@@ -123,9 +133,9 @@
 		ADDFBCDE2CB4BC79007FAAD3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				ADDFBCDD2CB4BC79007FAAD3 /* xemu.app */,
-				ADDFBCEE2CB4BC7A007FAAD3 /* xemuTests.xctest */,
-				ADDFBCF82CB4BC7A007FAAD3 /* xemuUITests.xctest */,
+				ADDFBCDD2CB4BC79007FAAD3 /* Xemu.app */,
+				ADDFBCEE2CB4BC7A007FAAD3 /* XemuTests.xctest */,
+				ADDFBCF82CB4BC7A007FAAD3 /* XemuUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -133,9 +143,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		ADDFBCDC2CB4BC79007FAAD3 /* xemu */ = {
+		ADDFBCDC2CB4BC79007FAAD3 /* Xemu */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = ADDFBD022CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "xemu" */;
+			buildConfigurationList = ADDFBD022CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "Xemu" */;
 			buildPhases = (
 				ADDFBCD92CB4BC79007FAAD3 /* Sources */,
 				ADDFBCDA2CB4BC79007FAAD3 /* Frameworks */,
@@ -148,7 +158,7 @@
 			fileSystemSynchronizedGroups = (
 				ADDFBCDF2CB4BC79007FAAD3 /* xemu */,
 			);
-			name = xemu;
+			name = Xemu;
 			packageProductDependencies = (
 				AD01196C2CB5957D00875153 /* stylx */,
 				AD01196F2CB5959100875153 /* XKit */,
@@ -157,12 +167,12 @@
 				AD0E151A2CC261EC003E415B /* XemuSwiftUI */,
 			);
 			productName = xemu;
-			productReference = ADDFBCDD2CB4BC79007FAAD3 /* xemu.app */;
+			productReference = ADDFBCDD2CB4BC79007FAAD3 /* Xemu.app */;
 			productType = "com.apple.product-type.application";
 		};
-		ADDFBCED2CB4BC7A007FAAD3 /* xemuTests */ = {
+		ADDFBCED2CB4BC7A007FAAD3 /* XemuTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = ADDFBD052CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "xemuTests" */;
+			buildConfigurationList = ADDFBD052CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "XemuTests" */;
 			buildPhases = (
 				ADDFBCEA2CB4BC7A007FAAD3 /* Sources */,
 				ADDFBCEB2CB4BC7A007FAAD3 /* Frameworks */,
@@ -176,16 +186,16 @@
 			fileSystemSynchronizedGroups = (
 				ADDFBCF12CB4BC7A007FAAD3 /* xemuTests */,
 			);
-			name = xemuTests;
+			name = XemuTests;
 			packageProductDependencies = (
 			);
 			productName = xemuTests;
-			productReference = ADDFBCEE2CB4BC7A007FAAD3 /* xemuTests.xctest */;
+			productReference = ADDFBCEE2CB4BC7A007FAAD3 /* XemuTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		ADDFBCF72CB4BC7A007FAAD3 /* xemuUITests */ = {
+		ADDFBCF72CB4BC7A007FAAD3 /* XemuUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = ADDFBD082CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "xemuUITests" */;
+			buildConfigurationList = ADDFBD082CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "XemuUITests" */;
 			buildPhases = (
 				ADDFBCF42CB4BC7A007FAAD3 /* Sources */,
 				ADDFBCF52CB4BC7A007FAAD3 /* Frameworks */,
@@ -199,11 +209,11 @@
 			fileSystemSynchronizedGroups = (
 				ADDFBCFB2CB4BC7A007FAAD3 /* xemuUITests */,
 			);
-			name = xemuUITests;
+			name = XemuUITests;
 			packageProductDependencies = (
 			);
 			productName = xemuUITests;
-			productReference = ADDFBCF82CB4BC7A007FAAD3 /* xemuUITests.xctest */;
+			productReference = ADDFBCF82CB4BC7A007FAAD3 /* XemuUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -249,9 +259,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				ADDFBCDC2CB4BC79007FAAD3 /* xemu */,
-				ADDFBCED2CB4BC7A007FAAD3 /* xemuTests */,
-				ADDFBCF72CB4BC7A007FAAD3 /* xemuUITests */,
+				ADDFBCDC2CB4BC79007FAAD3 /* Xemu */,
+				ADDFBCED2CB4BC7A007FAAD3 /* XemuTests */,
+				ADDFBCF72CB4BC7A007FAAD3 /* XemuUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -307,12 +317,12 @@
 /* Begin PBXTargetDependency section */
 		ADDFBCF02CB4BC7A007FAAD3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = ADDFBCDC2CB4BC79007FAAD3 /* xemu */;
+			target = ADDFBCDC2CB4BC79007FAAD3 /* Xemu */;
 			targetProxy = ADDFBCEF2CB4BC7A007FAAD3 /* PBXContainerItemProxy */;
 		};
 		ADDFBCFA2CB4BC7A007FAAD3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = ADDFBCDC2CB4BC79007FAAD3 /* xemu */;
+			target = ADDFBCDC2CB4BC79007FAAD3 /* Xemu */;
 			targetProxy = ADDFBCF92CB4BC7A007FAAD3 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -548,7 +558,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/xemu.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/xemu";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Xemu.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Xemu";
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Debug;
@@ -571,7 +581,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/xemu.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/xemu";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Xemu.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Xemu";
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Release;
@@ -632,7 +642,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		ADDFBD022CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "xemu" */ = {
+		ADDFBD022CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "Xemu" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				ADDFBD032CB4BC7A007FAAD3 /* Debug */,
@@ -641,7 +651,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		ADDFBD052CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "xemuTests" */ = {
+		ADDFBD052CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "XemuTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				ADDFBD062CB4BC7A007FAAD3 /* Debug */,
@@ -650,7 +660,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		ADDFBD082CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "xemuUITests" */ = {
+		ADDFBD082CB4BC7A007FAAD3 /* Build configuration list for PBXNativeTarget "XemuUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				ADDFBD092CB4BC7A007FAAD3 /* Debug */,

@@ -7,36 +7,20 @@ import XemuDebugger
 import XemuNES
 
 class XemuCLI {
-    private var commands: CommandRepository = CommandRepository()
-    var emulator: (any Emulator & Debuggable)? = nil
+    var emulator: (any Emulator & Debuggable)? = MockSystem()  // TODO: remove this and implement an emulator command
     var program: Data? = nil
-
-    func setup() {
-        emulator = MockSystem() // TODO: remove this and implement an emulator command
-        commands.register(FileCommand.self)
-        commands.register(RegistersCommand.self)
-        commands.register(ContextCommand.self)
-        commands.register(StackCommand.self)
-        commands.register(DisassembleCommand.self)
-        commands.register(StepInstructionCommand.self)
-        commands.register(ClearCommand.self)
-        commands.register(ExitCommand.self)
-    }
-
+    var breakpoints: [Breakpoint] = []
+    
     @MainActor
     func run() {
-        setup()
-        
-        let prompt = Prism {
-            ForegroundColor(.green, Prompts.prompt)
-        }
-        
         Output.shared.startMonitoring()
         
-        try? FileCommand(arguments: ["/Users/xehos/Downloads/nestest.nes"]).run(context: self)
+        run("""
+file /Users/xehos/Downloads/02-implied.nes
+context
+""")
 
-        try? ContextCommand().run(context: self)
-        
+        let prompt = Prism { ForegroundColor(.green, Prompts.prompt) }
         var lastCommand: String = ""
         
         while let line = readline(prompt.description) {
@@ -52,31 +36,32 @@ class XemuCLI {
                     lastCommand = input
                 }
             }
-            
-            let arguments = input.split(separator: " ").map(String.init)
-            
-            do throws(XemuError) {
-                try run(arguments: arguments)
-            } catch let error {
-                Output.shared.print(error.message.stringKey ?? "")
-            }
+                
+            run(input)
         }
     }
     
     @MainActor
-    func run(arguments: [String]) throws(XemuError) {
-        guard let first = arguments.first else {
-            return
-        }
+    func run(_ input: String) {
+        let commands = input
+            .split(separator: "\n")
+            .map(String.init)
         
-        let arguments = Array(arguments.dropFirst())
-        
-        if let command = commands.findCommandBy(name: first, arguments: arguments) {
-            try command.run(context: self)
+        for command in commands {
+            let arguments = ["xemu"] + command
+                .split(separator: " ")
+                .map(String.init)
             
-            return
+            do throws(XemuError) {
+                guard let command = XemuCommand.parse(from: arguments) else {
+                    continue
+                }
+                
+                try command.run(context: self)
+            } catch let error {
+                Output.shared.print(error.message.stringKey ?? "")
+            }
         }
         
-        throw .unknownCommand
     }
 }

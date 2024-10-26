@@ -50,7 +50,7 @@ final class Flags: Codable {
         u8(negative)            << 7 |
         u8(overflow)            << 6 |
         0b0010_0000                  |
-        u8(b)                   << 5 |
+        u8(b)                   << 4 |
         u8(decimal)             << 3 |
         u8(interruptDisabled)   << 2 |
         u8(zero)                << 1 |
@@ -58,7 +58,7 @@ final class Flags: Codable {
     }
     
     func setNZ(_ value: u8) {
-        zero        = Bool(value & Flags.ZERO_MASK)
-        negative    = Bool(value & Flags.NEGATIVE_MASK)
+        zero        = value == 0
+        negative    = value & 0b1000_0000 != 0
     }
 }

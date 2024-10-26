@@ -9,13 +9,13 @@ struct ContextCommand: Command {
     )
     
     func run(context: XemuCLI) throws(XemuError) {
-        guard context.emulator != nil else {
+        guard let emulator = context.emulator else {
             throw .emulatorNotSet
         }
         
         divider(title: "registers")
-        try RegistersCommand().run(context: context)
-        
+        try RegisterReadCommand().run(context: context)
+
         divider(title: "stack")
         try StackCommand().run(context: context)
         

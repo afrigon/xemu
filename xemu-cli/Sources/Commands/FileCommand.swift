@@ -42,7 +42,7 @@ struct FileCommand: Command {
         
         // TODO: set emu, pause, reset, load logic
 
-        try context.emulator?.load(program: data)
+        try context.emulator?.load(program: data, saveData: nil)
         context.program = data
     }
 }

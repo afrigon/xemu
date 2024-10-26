@@ -4,7 +4,6 @@ import XemuFoundation
 struct StepInstructionCommand: Command {
     static var configuration = CommandConfiguration(
         name: "stepi",
-        aliases: ["si"],
         description: "Steps through a single instruction. Steps into calls."
     )
     

@@ -58,11 +58,114 @@ public struct MOS6502 {
         case txa
         case txs
         case tya
+        
+        // Unofficial Opcode
+        case unofficialImmediateNop
+        case unofficialImmediateSbc(u8)
+        case unofficialNop(AddressingMode)
+        case lax(AddressingMode)
+        case dcp(AddressingMode)
+        case sax(AddressingMode)
+        case isb(AddressingMode)
+        case slo(AddressingMode)
+        case rla(AddressingMode)
+        case sre(AddressingMode)
+        case rra(AddressingMode)
+        
         case bad
+        
+        public var addressingMode: AddressingMode? {
+            switch self {
+                case .adc(let addressingMode):
+                    addressingMode
+                case .and(let addressingMode):
+                    addressingMode
+                case .asl(let addressingMode):
+                    addressingMode
+                case .bcc(let addressingMode):
+                    addressingMode
+                case .bcs(let addressingMode):
+                    addressingMode
+                case .beq(let addressingMode):
+                    addressingMode
+                case .bit(let addressingMode):
+                    addressingMode
+                case .bmi(let addressingMode):
+                    addressingMode
+                case .bne(let addressingMode):
+                    addressingMode
+                case .bpl(let addressingMode):
+                    addressingMode
+                case .bvc(let addressingMode):
+                    addressingMode
+                case .bvs(let addressingMode):
+                    addressingMode
+                case .cmp(let addressingMode):
+                    addressingMode
+                case .cpx(let addressingMode):
+                    addressingMode
+                case .cpy(let addressingMode):
+                    addressingMode
+                case .dec(let addressingMode):
+                    addressingMode
+                case .eor(let addressingMode):
+                    addressingMode
+                case .inc(let addressingMode):
+                    addressingMode
+                case .jmp(let addressingMode):
+                    addressingMode
+                case .jsr(let addressingMode):
+                    addressingMode
+                case .lda(let addressingMode):
+                    addressingMode
+                case .ldx(let addressingMode):
+                    addressingMode
+                case .ldy(let addressingMode):
+                    addressingMode
+                case .lsr(let addressingMode):
+                    addressingMode
+                case .ora(let addressingMode):
+                    addressingMode
+                case .rol(let addressingMode):
+                    addressingMode
+                case .ror(let addressingMode):
+                    addressingMode
+                case .sbc(let addressingMode):
+                    addressingMode
+                case .sta(let addressingMode):
+                    addressingMode
+                case .stx(let addressingMode):
+                    addressingMode
+                case .sty(let addressingMode):
+                    addressingMode
+                case .unofficialNop(let addressingMode):
+                    addressingMode
+                case .unofficialImmediateSbc(let value):
+                    .immediate(value)
+                case .lax(let addressingMode):
+                    addressingMode
+                case .dcp(let addressingMode):
+                    addressingMode
+                case .sax(let addressingMode):
+                    addressingMode
+                case .isb(let addressingMode):
+                    addressingMode
+                case .slo(let addressingMode):
+                    addressingMode
+                case .rla(let addressingMode):
+                    addressingMode
+                case .sre(let addressingMode):
+                    addressingMode
+                case .rra(let addressingMode):
+                    addressingMode
+                default:
+                    nil
+            }
+        }
         
         var bytes: [u8] {
             switch self {
-                case .adc(.immediate(let x)): [0x69]
+                case .adc(.immediate(let x)): [0x69, x]
                 case .adc(.zeroPage(let x)): [0x65, x]
                 case .adc(.zeroPageX(let x)): [0x75, x]
                 case .adc(.absolute(let x)): [0x6D] + x.p16()
@@ -71,7 +174,7 @@ public struct MOS6502 {
                 case .adc(.indexedIndirect(let x)): [0x61, x]
                 case .adc(.indirectIndexed(let x)): [0x71, x]
                     
-                case .and(.immediate(let x)): [0x29]
+                case .and(.immediate(let x)): [0x29, x]
                 case .and(.zeroPage(let x)): [0x25, x]
                 case .and(.zeroPageX(let x)): [0x35, x]
                 case .and(.absolute(let x)): [0x2D] + x.p16()
@@ -242,6 +345,66 @@ public struct MOS6502 {
                 case .txa: [0x8A]
                 case .txs: [0x9A]
                 case .tya: [0x98]
+                    
+                // unofficial opcodes
+                case .unofficialNop(.immediate(let x)): [0x04, x]
+                case .unofficialNop(.zeroPageX(let x)): [0x14, x]
+                case .unofficialNop(.absolute(let x)): [0x0C] + x.p16()
+                case .unofficialNop(.absoluteX(let x)): [0x1C] + x.p16()
+                case .unofficialImmediateSbc(let x): [0xEB, x]
+                case .lax(.zeroPage(let x)): [0xA7, x]
+                case .lax(.zeroPageY(let x)): [0xB7, x]
+                case .lax(.absolute(let x)): [0xAF] + x.p16()
+                case .lax(.absoluteY(let x)): [0xBF] + x.p16()
+                case .lax(.indexedIndirect(let x)): [0xA3, x]
+                case .lax(.indirectIndexed(let x)): [0xB3, x]
+                case .dcp(.zeroPage(let x)): [0xC7, x]
+                case .dcp(.zeroPageX(let x)): [0xD7, x]
+                case .dcp(.absolute(let x)): [0xCF] + x.p16()
+                case .dcp(.absoluteX(let x)): [0xDF] + x.p16()
+                case .dcp(.absoluteY(let x)): [0xDB] + x.p16()
+                case .dcp(.indexedIndirect(let x)): [0xC3, x]
+                case .dcp(.indirectIndexed(let x)): [0xD3, x]
+                case .sax(.zeroPage(let x)): [0x87, x]
+                case .sax(.zeroPageY(let x)): [0x97, x]
+                case .sax(.absolute(let x)): [0x8F] + x.p16()
+                case .sax(.indexedIndirect(let x)): [0x83, x]
+                case .isb(.zeroPage(let x)): [0xE7, x]
+                case .isb(.zeroPageX(let x)): [0xF7, x]
+                case .isb(.absolute(let x)): [0xEF] + x.p16()
+                case .isb(.absoluteX(let x)): [0xFF] + x.p16()
+                case .isb(.absoluteY(let x)): [0xFB] + x.p16()
+                case .isb(.indexedIndirect(let x)): [0xE3, x]
+                case .isb(.indirectIndexed(let x)): [0xF3, x]
+                case .slo(.zeroPage(let x)): [0x07, x]
+                case .slo(.zeroPageX(let x)): [0x17, x]
+                case .slo(.absolute(let x)): [0x0F] + x.p16()
+                case .slo(.absoluteX(let x)): [0x1F] + x.p16()
+                case .slo(.absoluteY(let x)): [0x1B] + x.p16()
+                case .slo(.indexedIndirect(let x)): [0x03, x]
+                case .slo(.indirectIndexed(let x)): [0x13, x]
+                case .rla(.zeroPage(let x)): [0x27, x]
+                case .rla(.zeroPageX(let x)): [0x37, x]
+                case .rla(.absolute(let x)): [0x2F] + x.p16()
+                case .rla(.absoluteX(let x)): [0x3F] + x.p16()
+                case .rla(.absoluteY(let x)): [0x3B] + x.p16()
+                case .rla(.indexedIndirect(let x)): [0x23, x]
+                case .rla(.indirectIndexed(let x)): [0x33, x]
+                case .sre(.zeroPage(let x)): [0x47, x]
+                case .sre(.zeroPageX(let x)): [0x57, x]
+                case .sre(.absolute(let x)): [0x4F] + x.p16()
+                case .sre(.absoluteX(let x)): [0x5F] + x.p16()
+                case .sre(.absoluteY(let x)): [0x5B] + x.p16()
+                case .sre(.indirectIndexed(let x)): [0x53, x]
+                case .sre(.indexedIndirect(let x)): [0x43, x]
+                case .rra(.zeroPage(let x)): [0x67, x]
+                case .rra(.zeroPageX(let x)): [0x77, x]
+                case .rra(.absolute(let x)): [0x6F] + x.p16()
+                case .rra(.absoluteX(let x)): [0x7F] + x.p16()
+                case .rra(.absoluteY(let x)): [0x7B] + x.p16()
+                case .rra(.indexedIndirect(let x)): [0x63, x]
+                case .rra(.indirectIndexed(let x)): [0x73, x]
+
                 default: []
             }
         }
@@ -251,7 +414,7 @@ public struct MOS6502 {
                 case .adc(let addressingMode):
                     "adc \(addressingMode.asm(offset: offset))"
                 case .and(let addressingMode):
-                    "adc \(addressingMode.asm(offset: offset))"
+                    "and \(addressingMode.asm(offset: offset))"
                 case .asl(let addressingMode):
                     "asl \(addressingMode.asm(offset: offset))"
                 case .bcc(let addressingMode):
@@ -360,8 +523,39 @@ public struct MOS6502 {
                     "txs"
                 case .tya:
                     "tya"
+                case .unofficialImmediateNop:
+                    "nop"
+                case .unofficialNop(let addressingMode):
+                    "nop \(addressingMode.asm(offset: offset))"
+                case .unofficialImmediateSbc(let value):
+                    "sbc \(value.hex(prefix: "#$", toLength: 2, textCase: .lowercase))"
+                case .lax(let addressingMode):
+                    "lax \(addressingMode.asm(offset: offset))"
+                case .dcp(let addressingMode):
+                    "dcp \(addressingMode.asm(offset: offset))"
+                case .sax(let addressingMode):
+                    "sax \(addressingMode.asm(offset: offset))"
+                case .isb(let addressingMode):
+                    "isb \(addressingMode.asm(offset: offset))"
+                case .slo(let addressingMode):
+                    "slo \(addressingMode.asm(offset: offset))"
+                case .rla(let addressingMode):
+                    "rla \(addressingMode.asm(offset: offset))"
+                case .sre(let addressingMode):
+                    "sre \(addressingMode.asm(offset: offset))"
+                case .rra(let addressingMode):
+                    "rra \(addressingMode.asm(offset: offset))"
                 case .bad:
                     "bad"
+            }
+        }
+        
+        public var official: Bool {
+            switch self {
+                case .unofficialImmediateNop, .unofficialNop, .unofficialImmediateSbc, .lax, .dcp, .sax, .slo, .isb, .rra, .sre, .rla:
+                    false
+                default:
+                    true
             }
         }
     }
@@ -394,21 +588,21 @@ public struct MOS6502 {
                 case .zeroPage(let value):
                     value.hex(prefix: "$", toLength: 2, textCase: .lowercase)
                 case .zeroPageX(let value):
-                    value.hex(prefix: "$", toLength: 2, textCase: .lowercase) + ", x"
+                    value.hex(prefix: "$", toLength: 2, textCase: .lowercase) + ",x"
                 case .zeroPageY(let value):
-                    value.hex(prefix: "$", toLength: 2, textCase: .lowercase) + ", y"
+                    value.hex(prefix: "$", toLength: 2, textCase: .lowercase) + ",y"
                 case .absolute(let address):
                     address.hex(prefix: "$", toLength: 4, textCase: .lowercase)
                 case .absoluteX(let address):
-                    address.hex(prefix: "$", toLength: 4, textCase: .lowercase) + ", x"
+                    address.hex(prefix: "$", toLength: 4, textCase: .lowercase) + ",x"
                 case .absoluteY(let address):
-                    address.hex(prefix: "$", toLength: 4, textCase: .lowercase) + ", y"
+                    address.hex(prefix: "$", toLength: 4, textCase: .lowercase) + ",y"
                 case .indirect(let value):
-                    "(\(value.hex(prefix: "$", toLength: 2, textCase: .lowercase)))"
+                    "(\(value.hex(prefix: "$", toLength: 4, textCase: .lowercase)))"
                 case .indexedIndirect(let value):
-                    "(\(value.hex(prefix: "$", toLength: 2, textCase: .lowercase)), x)"
+                    "(\(value.hex(prefix: "$", toLength: 2, textCase: .lowercase)),x)"
                 case .indirectIndexed(let value):
-                    "(\(value.hex(prefix: "$", toLength: 2, textCase: .lowercase))), y"
+                    "(\(value.hex(prefix: "$", toLength: 2, textCase: .lowercase))),y"
             }
         }
     }

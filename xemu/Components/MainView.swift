@@ -23,8 +23,7 @@ struct MainView: View {
                 case .menu:
                     MenuView()
                 case .gaming(let game):
-                    NesDebugView()
-//                    GameView(game: game)
+                    GameView(game: game)
             }
         }
         .alert(

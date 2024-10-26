@@ -3,7 +3,7 @@ import XemuFoundation
 extension MOS6502 {
     
     func halt() {
-        state.halt = true
+        state.halted = true
     }
     
     /// No Operation
@@ -81,10 +81,10 @@ extension MOS6502 {
     /// Return from Subroutine
     /// The RTS instruction is used at the end of a subroutine to return to the
     /// calling routine. It pulls the program counter (minus one) from the stack
-    func rts() {
+    func rts() throws(XemuError) {
         switch state.tick {
             case 2:
-                _ = bus.read(at: registers.pc)
+                bus.read(at: registers.pc)
             case 3:
                 break
             case 4:
@@ -99,56 +99,13 @@ extension MOS6502 {
                 break
         }
     }
-    
-    /// Return from Interrupt
-    /// The RTI instruction is used at the end of an interrupt processing routine.
-    /// It pulls the processor flags from the stack followed by the program counter
-    func rti() {
-        switch state.tick {
-            case 2:
-                _ = bus.read(at: registers.pc)
-            case 3:
-                break
-            case 4:
-                registers.p.set(pop())
-            case 5:
-                state.lo = pop()
-            case 6:
-                state.hi = pop()
-                registers.pc = state.data
-                state.tick = 0
-            default:
-                break
-        }
-    }
-    
-    /// Force Interrupt
-    /// The BRK instruction forces the generation of an interrupt request.
-    /// The program counter and processor status are pushed on the stack then
-    /// the IRQ interrupt vector at $FFFE/F is loaded into the PC and the break
-    /// flag in the status set to one
-    func brk() {
-        switch state.tick {
-            case 2:
-                _ = read8()
-            case 3, 4:
-                // TODO: this
-                break
-            case 5:
-                break
-            case 6, 7:
-                state.tick = 0
-            default:
-                break
-        }
-    }
 
     /// Push Accumulator
     /// Pushes a copy of the accumulator on to the stack
     func pha() {
         switch state.tick {
             case 2:
-                _ = bus.read(at: registers.pc)
+                bus.read(at: registers.pc)
             case 3:
                 push(registers.a)
                 state.tick = 0
@@ -162,7 +119,7 @@ extension MOS6502 {
     func php() {
         switch state.tick {
             case 2:
-                _ = bus.read(at: registers.pc)
+                bus.read(at: registers.pc)
             case 3:
                 push(registers.p.value(b: true))
                 state.tick = 0
@@ -177,7 +134,7 @@ extension MOS6502 {
     func pla() {
         switch state.tick {
             case 2:
-                _ = bus.read(at: registers.pc)
+                bus.read(at: registers.pc)
             case 3:
                 break
             case 4:
@@ -195,7 +152,7 @@ extension MOS6502 {
     func plp() {
         switch state.tick {
             case 2:
-                _ = bus.read(at: registers.pc)
+                bus.read(at: registers.pc)
             case 3:
                 break
             case 4:
@@ -279,7 +236,7 @@ extension MOS6502 {
     /// in memory to set or clear the zero flag, but the result is not kept.
     /// Bits 7 and 6 of the value from memory are copied into the N and V flags
     func bit(_ value: u8) {
-        registers.p.zero = Bool(registers.a & value)
+        registers.p.zero = !Bool(registers.a & value)
         registers.p.overflow = Bool(value & 0b0100_0000)
         registers.p.negative = Bool(value & 0b1000_0000)
     }
@@ -292,7 +249,7 @@ extension MOS6502 {
         let result = u16(registers.a) &+ u16(value) &+ u16(registers.p.carry)
         
         // overflow happens when register and value have the same sign (bit 7), but result does not
-        registers.p.overflow = Bool(~(registers.a ^ value) & (registers.a ^ u8(result)) & 0b1000_0000)
+        registers.p.overflow = Bool(~(registers.a ^ value) & (registers.a ^ u8(result & 0xFF)) & 0b1000_0000)
         registers.p.carry = result > 0xFF
         registers.a = u8(result & 0xFF)
         registers.p.setNZ(registers.a)
@@ -306,7 +263,7 @@ extension MOS6502 {
         let result = u16(registers.a) &- u16(value) &- u16(!registers.p.carry)
         
         // overflow happens when register and value have different sign (bit 7), and result is the same sign as value
-        registers.p.overflow = Bool((registers.a ^ value) & (registers.a ^ u8(result)) & 0b1000_0000)
+        registers.p.overflow = Bool((registers.a ^ value) & (registers.a ^ u8(result & 0xFF)) & 0b1000_0000)
         registers.p.carry = result <= 0xFF
         registers.a = u8(result & 0xFF)
         registers.p.setNZ(registers.a)
@@ -316,38 +273,48 @@ extension MOS6502 {
     /// Adds one to the value held at a specified memory location setting the
     /// zero and negative flags as appropriate
     func inc(_ value: u8) -> u8 {
-        value &+ 1
+        let result = value &+ 1
+        registers.p.setNZ(result)
+        
+        return result
     }
     
     /// Increment X Register
     /// Adds one to the X register setting the zero and negative flags as appropriate
     func inx() {
         registers.x &+= 1
+        registers.p.setNZ(registers.x)
     }
     
     /// Increment Y Register
     /// Adds one to the Y register setting the zero and negative flags as appropriate
     func iny() {
         registers.y &+= 1
+        registers.p.setNZ(registers.y)
     }
     
     /// Decrement Memory
     /// Subtracts one from the value held at a specified memory location setting
     /// the zero and negative flags as appropriate
     func dec(_ value: u8) -> u8 {
-        value &- 1
+        let result = value &- 1
+        registers.p.setNZ(result)
+        
+        return result
     }
     
     /// Decrement X Register
     /// Subtracts one from the X register setting the zero and negative flags as appropriate
     func dex() {
         registers.x &-= 1
+        registers.p.setNZ(registers.x)
     }
     
     /// Decrement Y Register
     /// Subtracts one from the Y register setting the zero and negative flags as appropriate
     func dey() {
         registers.y &-= 1
+        registers.p.setNZ(registers.y)
     }
     
     /// Arithmetic Shift Left
@@ -357,14 +324,25 @@ extension MOS6502 {
     /// (ignoring 2's complement considerations), setting the carry if the
     /// result will not fit in 8 bits
     func asl(_ value: u8) -> u8 {
-        return 0
+        registers.p.carry = Bool(value & 0b1000_0000)
+        
+        let result = value << 1
+        registers.p.setNZ(result)
+        
+        return result
     }
     
     /// Logical Shift Right
     /// Each of the bits in A or M is shift one place to the right. The bit that
     /// was in bit 0 is shifted into the carry flag. Bit 7 is set to zero
     func lsr(_ value: u8) -> u8 {
-        return 0
+        registers.p.carry = Bool(value & 0b0000_0001)
+        
+        let result = value >> 1
+        registers.p.zero = !Bool(result)
+        registers.p.negative = false
+        
+        return result
     }
     
     /// Rotate Left
@@ -372,7 +350,13 @@ extension MOS6502 {
     /// Bit 0 is filled with the current value of the carry flag whilst the old
     /// bit 7 becomes the new carry flag value
     func rol(_ value: u8) -> u8 {
-        return 0
+        let carry = u8(registers.p.carry)
+        registers.p.carry = Bool(value & 0b1000_0000)
+        
+        let result = value << 1 | carry
+        registers.p.setNZ(result)
+        
+        return result
     }
     
     /// Rotate Right
@@ -380,7 +364,13 @@ extension MOS6502 {
     /// Bit 7 is filled with the current value of the carry flag whilst the old
     /// bit 0 becomes the new carry flag value
     func ror(_ value: u8) -> u8 {
-        return 0
+        let carry = u8(registers.p.carry)
+        registers.p.carry = Bool(value & 0b0000_0001)
+        
+        let result = value >> 1 | carry << 7
+        registers.p.setNZ(result)
+        
+        return result
     }
     
     /// Load Accumulator
@@ -518,10 +508,10 @@ extension MOS6502 {
                     state.tick = 0
                 }
             case 3:
-                _ = bus.read(at: registers.pc) // fetch and discard
+                bus.read(at: registers.pc) // fetch and discard
                 
-                let address = registers.pc &+ u16(i8(bitPattern: state.lo))
-                registers.pc = (registers.pc & 0xFF00) | (address & 0xFF)
+                let address = i32(registers.pc) + i32(i8(bitPattern: state.lo))
+                registers.pc = (registers.pc & 0xFF00) | u16(address & 0xFF)
                 
                 // if branch to same page
                 if registers.pc & 0xFF00 == address & 0xFF00 {
@@ -530,7 +520,7 @@ extension MOS6502 {
                     state.temp = u8(address >> 8)
                 }
             case 4:
-                _ = bus.read(at: registers.pc) // fetch and discard
+                bus.read(at: registers.pc) // fetch and discard
                 
                 registers.pc = registers.pc & 0xFF | u16(state.temp) << 8
                 state.tick = 0

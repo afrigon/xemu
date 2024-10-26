@@ -73,22 +73,6 @@ public class MOS6502: Codable {
         write: handleIndexedIndirectWrite
     )
 
-    enum InterruptType: u16 {
-        
-        /// Non-Maskable Interrupt triggered by ppu
-        case nmi = 0xFFFA
-        
-        /// Triggered on reset button press and initial boot
-        case reset = 0xFFFC
-        
-        /// Maskable Interrupt triggered by a brk instruction or by memory mappers
-        case irq = 0xFFFE
-
-        var address: u16 {
-            return self.rawValue
-        }
-    }
-    
     init(bus: Bus) {
         self.bus = bus
     }
@@ -108,14 +92,30 @@ public class MOS6502: Codable {
         registers.s &+= 1
         return bus.read(at: u16(registers.s) + 0x0100)
     }
+    
+    func pollInterrupts() {
+        
+    }
 
     /// Runs for exactly 1 cycle
     public func clock() throws(XemuError) {
-        guard !state.halt else {
+        guard !state.halted else {
             throw .emulatorHalted
         }
         
         state.tick += 1
+        
+        // TODO: disable polling when taking a branch? https://www.nesdev.org/wiki/CPU_interrupts#Branch_instructions_and_interrupts
+        pollInterrupts()
+        
+        switch state.servicing {
+            case .some(.irq), .some(.nmi):
+                return handleInterrupt()
+            case .some(.reset):
+                return handleReset()
+            default:
+                break
+        }
         
         if state.tick == 1 {
             
@@ -124,7 +124,7 @@ public class MOS6502: Codable {
         } else {
             
             // decode
-            // https://llx.com/Neil/a2/opcodes.html#ins02
+            // https://llx.com/Neil/a2/opcodes.html
             let groupIndex          = (state.opcode & 0b0000_0011)
             let addressingModeIndex = (state.opcode & 0b0001_1100) >> 2
             let opcodeIndex         = (state.opcode & 0b1110_0000) >> 5
@@ -135,7 +135,7 @@ public class MOS6502: Codable {
                 case 0b10:
                     handleGroupTwo(addressingIndex: addressingModeIndex, opcodeIndex: opcodeIndex)
                 case 0b00:
-                    handleGroupThree()
+                    try handleGroupThree()
                 case 0b11:
                     handleUnofficial(addressingIndex: addressingModeIndex, opcodeIndex: opcodeIndex)
                 default:
@@ -205,7 +205,7 @@ public class MOS6502: Codable {
             case 0x96: zeroPageIndexedYHandler.write(stx)
             case 0xB6: zeroPageIndexedYHandler.read(ldx)
             case 0xBE: absoluteIndexedYHandler.read(ldx)
-            case 0x9E: shx()
+            case 0x9E: absoluteIndexedYHandler.write(shx)
             default:
                 let addressingMode = switch addressingIndex {
                     case 0b001: zeroPageHandler
@@ -231,7 +231,7 @@ public class MOS6502: Codable {
     }
     
     // All the branch instructions, flag operations, stack operations, and a few others.
-    private func handleGroupThree() {
+    private func handleGroupThree() throws(XemuError) {
         
         // Branch instructions are of the form xxy10000
         if state.opcode & 0b0001_1111 == 0b0001_0000 {
@@ -245,7 +245,7 @@ public class MOS6502: Codable {
             case 0x0C: absoluteHandler.read(nopRead)
             case 0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4: zeroPageIndexedXHandler.read(nopRead)
             case 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC: absoluteIndexedXHandler.read(nopRead)
-            case 0x9C: shy()
+            case 0x9C: absoluteIndexedXHandler.write(shy)
             case 0xA0: immediateHandler.read(ldy)
             case 0xC0: immediateHandler.read(cpy)
             case 0xE0: immediateHandler.read(cpx)
@@ -270,7 +270,7 @@ public class MOS6502: Codable {
             case 0x48: pha()
             case 0x68: pla()
             case 0x40: rti()
-            case 0x60: rts()
+            case 0x60: try rts()
             case 0x88: handleImplied(dey)
             case 0xA8: handleImplied(tay)
             case 0xC8: handleImplied(iny)
@@ -289,7 +289,45 @@ public class MOS6502: Codable {
     
     // https://www.nesdev.org/wiki/CPU_unofficial_opcodes
     private func handleUnofficial(addressingIndex: u8, opcodeIndex: u8) {
-        
+        switch state.opcode {
+            case 0x0B, 0x2B: immediateHandler.read(anc)
+            case 0x4B: immediateHandler.read(alr)
+            case 0x6B: immediateHandler.read(arr)
+            case 0x8B: immediateHandler.read(xaa)
+            case 0x93: indirectIndexedHandler.write(ahx)
+            case 0x9B: absoluteIndexedYHandler.write(tas)
+            case 0x97: zeroPageIndexedYHandler.write(sax)
+            case 0x9F: absoluteIndexedYHandler.write(ahx)
+            case 0xB7: zeroPageIndexedYHandler.read(lax)
+            case 0xBB: absoluteIndexedYHandler.read(las)
+            case 0xBF: absoluteIndexedYHandler.read(lax)
+            case 0xCB: immediateHandler.read(axs)
+            case 0xEB: immediateHandler.read(sbc)
+            default:
+                let addressingMode = switch addressingIndex {
+                    case 0b000: indexedIndirectHandler
+                    case 0b001: zeroPageHandler
+                    case 0b010: immediateHandler
+                    case 0b011: absoluteHandler
+                    case 0b100: indirectIndexedHandler
+                    case 0b101: zeroPageIndexedXHandler
+                    case 0b110: absoluteIndexedYHandler
+                    case 0b111: absoluteIndexedXHandler
+                    default: unimplementedHandler
+                }
+
+                switch opcodeIndex {
+                    case 0b000: addressingMode.modify(slo)
+                    case 0b001: addressingMode.modify(rla)
+                    case 0b010: addressingMode.modify(sre)
+                    case 0b011: addressingMode.modify(rra)
+                    case 0b100: addressingMode.write(sax)
+                    case 0b101: addressingMode.read(lax)
+                    case 0b110: addressingMode.modify(dcp)
+                    case 0b111: addressingMode.modify(isc)
+                    default: break
+                }
+        }
     }
     
     enum CodingKeys: String, CodingKey {

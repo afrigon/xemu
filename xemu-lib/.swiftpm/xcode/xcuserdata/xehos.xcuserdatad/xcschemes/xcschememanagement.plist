@@ -4,16 +4,6 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>XemuAsm.xcscheme_^#shared#^_</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>7</integer>
-		</dict>
-		<key>XemuCore.xcscheme_^#shared#^_</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>3</integer>
-		</dict>
 		<key>XemuCoreTests.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
@@ -24,25 +14,10 @@
 			<key>orderHint</key>
 			<integer>7</integer>
 		</dict>
-		<key>XemuDebugger.xcscheme_^#shared#^_</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>6</integer>
-		</dict>
 		<key>XemuDebuggerTests.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>2</integer>
-		</dict>
-		<key>XemuFoundation.xcscheme_^#shared#^_</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>2</integer>
-		</dict>
-		<key>XemuNES.xcscheme_^#shared#^_</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>4</integer>
 		</dict>
 		<key>XemuNESTests.xcscheme_^#shared#^_</key>
 		<dict>
@@ -59,15 +34,45 @@
 			<key>orderHint</key>
 			<integer>6</integer>
 		</dict>
-		<key>XemuSwiftUI.xcscheme_^#shared#^_</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>5</integer>
-		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>Clibedit</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>XemuAsm</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>XemuCore</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>XemuDebugger</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>XemuFoundation</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>XemuNES</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>XemuNESTests</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>XemuSwiftUI</key>
 		<dict>
 			<key>primary</key>
 			<true/>
