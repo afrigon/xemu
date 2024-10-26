@@ -29,6 +29,7 @@ extension MOS6502 {
             case 5:
                 bus.read(at: u16(registers.s) + 0x0100)
                 registers.s &-= 1
+                registers.p.interruptDisabled = true
             case 6:
                 state.lo = bus.read(at: InterruptType.reset.rawValue)
             case 7:

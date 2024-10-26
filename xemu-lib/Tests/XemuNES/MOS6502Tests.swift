@@ -71,7 +71,7 @@ struct MOS6502Tests {
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_basics() async throws {
-        try testBlargg(test: "01-basics", debug: true)
+        try testBlargg(test: "01-basics")
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_implied() async throws {

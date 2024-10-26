@@ -143,7 +143,7 @@ struct MapperMMC1Tests {
         #expect(mapper.control == 0x0C)
         #expect(mapper.chrbank0 == 0)
         #expect(mapper.chrbank1 == 0)
-        #expect(mapper.pgrbank == 0b0001_1100)
+        #expect(mapper.pgrbank == 0b0001_1100) // TODO: adjust these for the proper write values
         #expect(mapper.shift == 0b1000_0000)
     }
 }

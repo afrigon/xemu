@@ -8,6 +8,7 @@ public class NES: Emulator, BusDelegate {
     let cpu: MOS6502
     let apu: APU
     let ppu: PPU
+    
     let bus: Bus = Bus()
     var cartridge: Cartridge? = nil
     
@@ -57,11 +58,27 @@ public class NES: Emulator, BusDelegate {
     }
     
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {
-        nil
+        let mappedData = cartridge?.cpuRead(at: address) ?? bus.openBus
+        
+        switch address {
+            case 0x0000..<0x2000:
+                return wram.mirroredRead(at: address)
+            case 0x6000...0xFFFF:
+                return mappedData
+            default:
+                return bus.openBus
+        }
     }
     
     func bus(bus: Bus, didSendWriteSignalAt address: u16, _ data: u8) {
+        cartridge?.cpuWrite(data, at: address)
         
+        switch address {
+            case 0x0000..<0x2000:
+                return wram.mirroredWrite(data, at: address)
+            default:
+                break
+        }
     }
 
     public func load(program: Data, saveData: Data? = nil) throws(XemuError) {

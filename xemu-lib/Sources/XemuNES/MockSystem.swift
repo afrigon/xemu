@@ -61,15 +61,9 @@ public class MockSystem: Emulator, BusDelegate {
     }
     
     public func reset() {
-        cycles = 7
-        
-        cpu.registers.s &-= 3
-        cpu.registers.p.interruptDisabled = true
-        
-        // TODO: replace with reset interrupt and and couple of clock cycles
-        cpu.registers.pc =
-            u16(bus.read(at: MOS6502.InterruptType.reset.rawValue)) |
-            u16(bus.read(at: MOS6502.InterruptType.reset.rawValue + 1)) << 8
+        cycles = 0
+        cpu.state.tick = 0
+        cpu.state.servicing = .reset
     }
     
     public func clock() throws(XemuError) {

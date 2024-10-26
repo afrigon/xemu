@@ -1,10 +1,3 @@
-//
-//  xemuUITestsLaunchTests.swift
-//  xemuUITests
-//
-//  Created by Alexandre Frigon on 2024-10-07.
-//
-
 import XCTest
 
 final class xemuUITestsLaunchTests: XCTestCase {
