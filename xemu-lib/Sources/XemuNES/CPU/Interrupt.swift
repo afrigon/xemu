@@ -54,8 +54,8 @@ extension MOS6502 {
             case 4:
                 push(u8(registers.pc & 0xFF))
             case 5:
-                if state.nmiRequested {
-                    state.nmiRequested = false
+                if state.nmiPending {
+                    state.nmiPending = false
                     state.data = InterruptType.nmi.rawValue
                 } else {
                     state.data = InterruptType.irq.rawValue
@@ -85,8 +85,8 @@ extension MOS6502 {
             case 3, 4:
                 handleInterrupt()
             case 5:
-                if state.nmiRequested {
-                    state.nmiRequested = false
+                if state.nmiPending {
+                    state.nmiPending = false
                     state.data = InterruptType.nmi.rawValue
                 } else {
                     state.data = InterruptType.irq.rawValue

@@ -84,17 +84,21 @@ public class MOS6502: Codable {
     }
     
     func push(_ value: u8) {
-        bus.write(value, at: u16(registers.s) + 0x0100)
+        bus.writeStack(value, at: registers.s)
         registers.s &-= 1
     }
     
     func pop() -> u8 {
         registers.s &+= 1
-        return bus.read(at: u16(registers.s) + 0x0100)
+        return bus.readStack(at: registers.s)
     }
     
     func pollInterrupts() {
+        let oldNMI = state.nmiLastValue
+        state.nmiLastValue = bus.nmiSignal()
         
+        state.nmiPending = oldNMI != state.nmiLastValue
+        state.irqPending = bus.irqSignal()
     }
 
     /// Runs for exactly 1 cycle
@@ -105,9 +109,17 @@ public class MOS6502: Codable {
         
         state.tick += 1
         
+        if state.tick == 1 {
+            if state.nmiPending {
+                state.servicing = .nmi
+            } else if state.irqPending {
+                state.servicing = .irq
+            }
+        }
+        
         // TODO: disable polling when taking a branch? https://www.nesdev.org/wiki/CPU_interrupts#Branch_instructions_and_interrupts
         pollInterrupts()
-        
+
         switch state.servicing {
             case .some(.irq), .some(.nmi):
                 return handleInterrupt()

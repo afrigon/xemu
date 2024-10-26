@@ -50,14 +50,22 @@ public class NES: Emulator, BusDelegate {
     }
     
     func nmiSignal() -> Bool {
-        false
+        Bool(ppu.control & ppu.status & 0b1000_0000)
     }
     
     func irqSignal() -> Bool {
-        false
+        guard !cpu.registers.p.interruptDisabled else {
+            return false
+        }
+        
+        return false
     }
     
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {
+        if address == 0x4015 {
+            
+        }
+        
         let mappedData = cartridge?.cpuRead(at: address) ?? bus.openBus
         
         switch address {
@@ -79,6 +87,22 @@ public class NES: Emulator, BusDelegate {
             default:
                 break
         }
+    }
+    
+    func bus(bus: Bus, didSendReadZeroPageSignalAt address: u8) -> u8 {
+        wram.data[Int(address)]
+    }
+    
+    func bus(bus: Bus, didSendWriteZeroPageSignalAt address: u8, _ data: u8) {
+        wram.data[Int(address)] = data
+    }
+    
+    func bus(bus: Bus, didSendReadStackSignalAt address: u8) -> u8 {
+        wram.data[Int(address) + 0x100]
+    }
+    
+    func bus(bus: Bus, didSendWriteStackSignalAt address: u8, _ data: u8) {
+        wram.data[Int(address) + 0x100] = data
     }
 
     public func load(program: Data, saveData: Data? = nil) throws(XemuError) {

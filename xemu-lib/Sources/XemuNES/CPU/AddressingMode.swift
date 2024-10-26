@@ -256,7 +256,7 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                fn(bus.read(at: u16(state.lo)))
+                fn(bus.readZeroPage(at: state.lo))
                 state.tick = 0
             default:
                 break
@@ -268,12 +268,12 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                state.temp = bus.read(at: u16(state.lo))
+                state.temp = bus.readZeroPage(at: state.lo)
             case 4:
-                bus.write(state.temp, at: u16(state.lo))
+                bus.writeZeroPage(state.temp, at: state.lo)
                 state.temp = fn(state.temp)
             case 5:
-                bus.write(state.temp, at: u16(state.lo))
+                bus.writeZeroPage(state.temp, at: state.lo)
                 state.tick = 0
             default:
                 break
@@ -285,7 +285,7 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                bus.write(fn(), at: u16(state.lo))
+                bus.writeZeroPage(fn(), at: state.lo)
                 state.tick = 0
             default:
                 break
@@ -299,10 +299,10 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                bus.read(at: u16(state.lo))
+                bus.readZeroPage(at: state.lo)
                 state.lo &+= registers.x
             case 4:
-                fn(bus.read(at: u16(state.lo)))
+                fn(bus.readZeroPage(at: state.lo))
                 state.tick = 0
             default:
                 break
@@ -314,15 +314,15 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                bus.read(at: u16(state.lo))
+                bus.readZeroPage(at: state.lo)
                 state.lo &+= registers.x
             case 4:
-                state.temp = bus.read(at: u16(state.lo))
+                state.temp = bus.readZeroPage(at: state.lo)
             case 5:
-                bus.write(state.temp, at: u16(state.lo))
+                bus.writeZeroPage(state.temp, at: state.lo)
                 state.temp = fn(state.temp)
             case 6:
-                bus.write(state.temp, at: u16(state.lo))
+                bus.writeZeroPage(state.temp, at: state.lo)
                 state.tick = 0
             default:
                 break
@@ -334,10 +334,10 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                bus.read(at: u16(state.lo))
+                bus.readZeroPage(at: state.lo)
                 state.lo &+= registers.x
             case 4:
-                bus.write(fn(), at: u16(state.lo))
+                bus.writeZeroPage(fn(), at: state.lo)
                 state.tick = 0
             default:
                 break
@@ -351,10 +351,10 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                bus.read(at: u16(state.lo))
+                bus.readZeroPage(at: state.lo)
                 state.lo &+= registers.y
             case 4:
-                fn(bus.read(at: u16(state.lo)))
+                fn(bus.readZeroPage(at: state.lo))
                 state.tick = 0
             default:
                 break
@@ -366,15 +366,15 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                bus.read(at: u16(state.lo))
+                bus.readZeroPage(at: state.lo)
                 state.lo &+= registers.y
             case 4:
-                state.temp = bus.read(at: u16(state.lo))
+                state.temp = bus.readZeroPage(at: state.lo)
             case 5:
-                bus.write(state.temp, at: u16(state.lo))
+                bus.writeZeroPage(state.temp, at: state.lo)
                 state.temp = fn(state.temp)
             case 6:
-                bus.write(state.temp, at: u16(state.lo))
+                bus.writeZeroPage(state.temp, at: state.lo)
                 state.tick = 0
             default:
                 break
@@ -386,10 +386,10 @@ extension MOS6502 {
             case 2:
                 state.lo = read8()
             case 3:
-                bus.read(at: u16(state.lo))
+                bus.readZeroPage(at: state.lo)
                 state.lo &+= registers.y
             case 4:
-                bus.write(fn(), at: u16(state.lo))
+                bus.writeZeroPage(fn(), at: state.lo)
                 state.tick = 0
             default:
                 break

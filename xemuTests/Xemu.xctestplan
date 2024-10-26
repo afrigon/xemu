@@ -41,6 +41,7 @@
           {
             "name" : "MOS6502Tests",
             "testFunctions" : [
+              "blargg_cpu_timing()",
               "blargg_instrs_v5()"
             ]
           }

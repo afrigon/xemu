@@ -55,6 +55,22 @@ public class MockSystem: Emulator, BusDelegate {
         }
     }
     
+    func bus(bus: Bus, didSendReadZeroPageSignalAt address: u8) -> u8 {
+        wram.data[Int(address)]
+    }
+    
+    func bus(bus: Bus, didSendWriteZeroPageSignalAt address: u8, _ data: u8) {
+        wram.data[Int(address)] = data
+    }
+    
+    func bus(bus: Bus, didSendReadStackSignalAt address: u8) -> u8 {
+        wram.data[Int(address) + 0x100]
+    }
+    
+    func bus(bus: Bus, didSendWriteStackSignalAt address: u8, _ data: u8) {
+        wram.data[Int(address) + 0x100] = data
+    }
+
     public func load(program: Data, saveData: Data? = nil) throws(XemuError) {
         let iNes = try iNesFile(program)
         cartridge = Cartridge(from: iNes, saveData: saveData)
