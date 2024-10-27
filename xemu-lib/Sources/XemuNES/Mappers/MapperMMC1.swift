@@ -8,7 +8,8 @@ class MapperMMC1: Mapper {
     let pgrrom: Memory
     let chrrom: Memory
     let sram: Memory
-    
+    let vram: Memory
+
     /// Consecutive-cycle writes
     ///
     /// When the serial port is written to on consecutive cycles, it ignores
@@ -66,12 +67,14 @@ class MapperMMC1: Mapper {
         self.pgrrom = pgrrom
         self.chrrom = chrrom
         self.sram = sram
+        self.vram = .init(.init(repeating: 0, count: 0x800))
     }
     
     required init(from iNes: iNesFile, saveData: Data) {
         pgrrom = .init(iNes.pgrrom)
         chrrom = .init(iNes.chrrom)
         sram = .init(saveData)
+        vram = .init(.init(repeating: 0, count: 0x800))
     }
     
     func cpuRead(at address: u16) -> u8? {

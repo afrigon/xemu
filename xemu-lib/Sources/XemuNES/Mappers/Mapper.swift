@@ -7,6 +7,7 @@ protocol Mapper: Codable {
     var pgrrom: Memory { get }
     var chrrom: Memory { get }
     var sram: Memory { get }
+    var vram: Memory { get }
 
     init(from iNes: iNesFile, saveData: Data)
     
@@ -40,6 +41,8 @@ class AnyMapper: Codable {
                 self.mapper = MapperNROM(from: iNes, saveData: saveData)
             case .mmc1:
                 self.mapper = MapperMMC1(from: iNes, saveData: saveData)
+            case .cnrom:
+                self.mapper = MapperCNROM(from: iNes, saveData: saveData)
         }
     }
 
@@ -57,6 +60,8 @@ class AnyMapper: Codable {
                 self.mapper = try container.decode(MapperNROM.self, forKey: .mapper)
             case .mmc1:
                 self.mapper = try container.decode(MapperMMC1.self, forKey: .mapper)
+            case .cnrom:
+                self.mapper = try container.decode(MapperCNROM.self, forKey: .mapper)
         }
     }
     

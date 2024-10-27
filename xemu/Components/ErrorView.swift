@@ -1,4 +1,5 @@
 import SwiftUI
+import XemuFoundation
 
 struct ErrorView: View {
     let error: XemuError

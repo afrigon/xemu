@@ -13,14 +13,16 @@ public class NES: Emulator, BusDelegate {
     var cartridge: Cartridge? = nil
     
     let wram: Memory
-    let vram: Memory
     
     enum CodingKeys: CodingKey {
         case cpu
         case apu
         case ppu
         case wram
-        case vram
+    }
+    
+    public var frame: Data? {
+        ppu.frame
     }
 
     @MainActor
@@ -29,7 +31,6 @@ public class NES: Emulator, BusDelegate {
         apu = .init(bus: bus)
         ppu = .init(bus: bus)
         wram = .init(.init(repeating: 0, count: 0x800))
-        vram = .init(.init(repeating: 0, count: 0x800))
         bus.delegate = self
         
         reset()
@@ -41,7 +42,6 @@ public class NES: Emulator, BusDelegate {
         apu = try container.decode(APU.self, forKey: .apu)
         ppu = try container.decode(PPU.self, forKey: .ppu)
         wram = try container.decode(Memory.self, forKey: .wram)
-        vram = try container.decode(Memory.self, forKey: .vram)
 
         bus.delegate = self
         cpu.bus = bus
@@ -87,6 +87,14 @@ public class NES: Emulator, BusDelegate {
             default:
                 break
         }
+    }
+    
+    func bus(bus: Bus, didSendReadVideoSignalAt address: u16) -> u8? {
+        cartridge?.ppuRead(at: address)
+    }
+    
+    func bus(bus: Bus, didSendWriteVideoSignalAt address: u16, _ data: u8) {
+        cartridge?.ppuWrite(data, at: address)
     }
     
     func bus(bus: Bus, didSendReadZeroPageSignalAt address: u8) -> u8 {

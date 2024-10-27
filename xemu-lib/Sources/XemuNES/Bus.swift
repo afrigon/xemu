@@ -7,6 +7,9 @@ protocol BusDelegate: AnyObject {
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8?
     func bus(bus: Bus, didSendWriteSignalAt address: u16, _ data: u8)
     
+    func bus(bus: Bus, didSendReadVideoSignalAt address: u16) -> u8?
+    func bus(bus: Bus, didSendWriteVideoSignalAt address: u16, _ data: u8)
+
     func bus(bus: Bus, didSendReadZeroPageSignalAt address: u8) -> u8
     func bus(bus: Bus, didSendWriteZeroPageSignalAt address: u8, _ data: u8)
     
@@ -41,6 +44,15 @@ class Bus {
         delegate.bus(bus: self, didSendWriteSignalAt: address, data)
     }
     
+    @discardableResult
+    public func ppuRead(at address: u16) -> u8? {
+        return delegate.bus(bus: self, didSendReadVideoSignalAt: address)
+    }
+    
+    public func ppuWrite(_ data: u8, at address: u16) {
+        delegate.bus(bus: self, didSendWriteVideoSignalAt: address, data)
+    }
+
     @discardableResult
     public func readZeroPage(at address: u8) -> u8 {
         return delegate.bus(bus: self, didSendReadZeroPageSignalAt: address)

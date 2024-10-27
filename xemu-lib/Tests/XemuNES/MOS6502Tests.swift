@@ -52,6 +52,8 @@ struct MOS6502Tests {
                 try nes.clock()
             } while nes.cpu.state.tick != 0
             
+            print(nes.status)
+            
             if nes.cpu.registers.s > 0xFD {
                 break
             }

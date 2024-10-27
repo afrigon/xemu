@@ -1,6 +1,7 @@
 import SQLite3
 import Foundation
 import XemuCore
+import XemuFoundation
 
 class OpenVGDBService {
     static let shared = OpenVGDBService()

@@ -1,8 +1,8 @@
 import SwiftUI
 import XKit
 import XemuCore
+import XemuFoundation
 import stylx
-import XemuSwiftUI
 
 struct MainView: View {
     @Environment(\.modelContext) var modelContext

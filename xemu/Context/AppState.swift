@@ -1,4 +1,5 @@
 import XemuCore
+import XemuFoundation
 
 enum AppState {
     case loading

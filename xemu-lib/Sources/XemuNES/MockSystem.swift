@@ -17,6 +17,10 @@ public class MockSystem: Emulator, BusDelegate {
         case cartridge
         case cycles
     }
+    
+    public var frame: Data? {
+        Data(repeating: 0, count: 256 * 240)
+    }
 
     public init() {
         cpu = .init(bus: bus)
@@ -53,6 +57,14 @@ public class MockSystem: Emulator, BusDelegate {
             default:
                 break
         }
+    }
+    
+    func bus(bus: Bus, didSendReadVideoSignalAt address: u16) -> u8? {
+        nil
+    }
+    
+    func bus(bus: Bus, didSendWriteVideoSignalAt address: u16, _ data: u8) {
+        
     }
     
     func bus(bus: Bus, didSendReadZeroPageSignalAt address: u8) -> u8 {

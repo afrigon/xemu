@@ -15,7 +15,6 @@ let package = Package(
         .library(name: "XemuCore", targets: ["XemuCore"]),
         .library(name: "XemuDebugger", targets: ["XemuDebugger"]),
         .library(name: "XemuAsm", targets: ["XemuAsm"]),
-        .library(name: "XemuSwiftUI", targets: ["XemuSwiftUI"]),
         .library(name: "XemuNES", targets: ["XemuNES"])
     ],
     dependencies: [
@@ -84,24 +83,6 @@ let package = Package(
                 "XemuAsm"
             ],
             path: "Tests/XemuAsm"
-        ),
-
-        // MARK: XemuSwiftUI
-        .target(
-            name: "XemuSwiftUI",
-            dependencies: [
-                "XemuCore",
-                "XemuNES",
-                "stylx"
-            ],
-            path: "Sources/XemuSwiftUI"
-        ),
-        .testTarget(
-            name: "XemuSwiftUITests",
-            dependencies: [
-                "XemuSwiftUI"
-            ],
-            path: "Tests/XemuSwiftUI"
         ),
 
         // MARK: XemuNES

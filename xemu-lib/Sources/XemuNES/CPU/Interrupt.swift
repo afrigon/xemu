@@ -13,6 +13,10 @@ extension MOS6502 {
         case irq = 0xFFFE
     }
     
+    /// Reset Sequence
+    ///
+    /// This sequence is run when a reset interrupt is detected.
+    /// https://www.pagetable.com/?p=410
     func handleReset() {
         switch state.tick {
             case 1:

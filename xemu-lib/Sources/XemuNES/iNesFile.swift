@@ -22,32 +22,6 @@ public struct iNesFile: RomFile {
         }
     }
     
-    /// Hard-wired nametable layout
-    enum NametableArrangement {
-        
-        /// Vertical arrangement ("mirrored horizontally") or mapper-controlled
-        case vertical
-        
-        /// Horizontal arrangement ("mirrored vertically")
-        case horizontal
-        
-        /// Alternative Nametables
-        /// https://www.nesdev.org/wiki/NES_2.0#Nametable_layout
-        case other
-        
-        init(_ value: Bool, alternative: Bool) {
-            if alternative {
-                self = .other
-            } else {
-                if value {
-                    self = .horizontal
-                } else {
-                    self = .vertical
-                }
-            }
-        }
-    }
-
     enum ConsoleType: UInt {
         
         /// Nintendo Entertainment System/Family Computer
@@ -115,7 +89,7 @@ public struct iNesFile: RomFile {
     // Flag 6
     
     /// Hard-wired nametable layout
-    let nametableArrangement: NametableArrangement
+    let nametableLayout: NametableLayout
     
     /// "Battery" and other non-volatile memory
     let hasBattery: Bool
@@ -148,7 +122,7 @@ public struct iNesFile: RomFile {
         let isUsingAlternativeNametableLayout = try d.takeBit(1) != 0
         hasTrainer = try d.takeBit(1) != 0
         hasBattery = try d.takeBit(1) != 0
-        nametableArrangement = NametableArrangement(try d.takeBit(1) != 0, alternative: isUsingAlternativeNametableLayout)
+        nametableLayout = NametableLayout(try d.takeBit(1) != 0, alternative: isUsingAlternativeNametableLayout)
         
         // Flag 7
         let mapperHi = try d.takeBit(4)

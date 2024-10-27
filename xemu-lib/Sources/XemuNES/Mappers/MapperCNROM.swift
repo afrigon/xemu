@@ -1,8 +1,8 @@
 import Foundation
 import XemuFoundation
 
-class MapperNROM: Mapper {
-    var type: MapperType = .nrom
+class MapperCNROM: Mapper {
+    var type: MapperType = .cnrom
     
     let pgrrom: Memory
     let chrrom: Memory
@@ -10,6 +10,8 @@ class MapperNROM: Mapper {
     
     let vram: Memory
     let nametableLayout: NametableLayout
+
+    var chrbank: u8 = 0
 
     required init(from iNes: iNesFile, saveData: Data) {
         pgrrom = .init(iNes.pgrrom)
@@ -35,7 +37,7 @@ class MapperNROM: Mapper {
             case 0x6000..<0x8000:
                 sram.write(data, at: address - 0x6000)
             case 0x8000...0xFFFF:
-                pgrrom.mirroredWrite(data, at: address - 0x8000)
+                chrbank = data & 0b0000_0011
             default:
                 break
         }
@@ -44,7 +46,7 @@ class MapperNROM: Mapper {
     func ppuRead(at address: u16) -> u8? {
         switch address {
             case 0x0000..<0x2000:
-                chrrom.mirroredRead(at: address)
+                chrrom.bankedRead(at: address, bankIndex: Int(chrbank), bankSize: 0x2000)
             case 0x2000..<0x4000:
                 vram.read(at: nametableLayout.map(address))
             default:
@@ -55,7 +57,7 @@ class MapperNROM: Mapper {
     func ppuWrite(_ data: u8, at address: u16) {
         switch address {
             case 0x0000..<0x2000:
-                chrrom.mirroredWrite(data, at: address)
+                chrrom.bankedWrite(data, at: address, bankIndex: Int(chrbank), bankSize: 0x2000)
             case 0x2000..<0x4000:
                 vram.write(data, at: nametableLayout.map(address))
             default:

@@ -1,6 +1,7 @@
 import UniformTypeIdentifiers
 import XemuCore
 import SwiftData
+import XemuFoundation
 
 class ImportExportService {
     static let shared = ImportExportService()

@@ -1,4 +1,5 @@
 import SwiftUI
+import XemuFoundation
 
 /// Environment key for open media
 struct ErrorEnv: EnvironmentKey {

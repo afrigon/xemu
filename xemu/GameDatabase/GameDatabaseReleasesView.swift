@@ -1,5 +1,6 @@
 import SwiftUI
 import XemuCore
+import XemuFoundation
 import stylx
 import XKit
 

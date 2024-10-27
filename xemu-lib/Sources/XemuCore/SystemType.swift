@@ -1,4 +1,4 @@
-public enum SystemType: String, CaseIterable, Hashable, Codable, Identifiable {
+public enum SystemType: String, CaseIterable, Hashable, Codable, Identifiable, Sendable {
     
     /// Nintendo Entertainment System
     case nes

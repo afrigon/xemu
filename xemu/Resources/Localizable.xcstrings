@@ -13,9 +13,6 @@
     "All associated data, such as saves and save states, will also be deleted." : {
 
     },
-    "An unexpected error occurred during initialization." : {
-
-    },
     "Are you sure you want to delete this game?" : {
 
     },
@@ -35,9 +32,6 @@
 
     },
     "Copy MD5 Hash" : {
-
-    },
-    "Could not open this file, the format provided is unsuported." : {
 
     },
     "Debug Settings" : {
@@ -89,18 +83,6 @@
 
     },
     "Settings" : {
-
-    },
-    "Something went wrong while accessing the game database." : {
-
-    },
-    "Something went wrong while loading remote config." : {
-
-    },
-    "Something went wrong while trying to access the file system." : {
-
-    },
-    "Something went wrong while trying to import the file." : {
 
     },
     "Sort By" : {
