@@ -3,6 +3,7 @@ import XKit
 import XemuCore
 import XemuFoundation
 import stylx
+import XemuNES
 
 struct MainView: View {
     @Environment(\.modelContext) var modelContext
@@ -23,6 +24,8 @@ struct MainView: View {
                 case .menu:
                     MenuView()
                 case .gaming(let game):
+//                    let file = try! iNesFile(game.data)
+//                    NESPatternTableView(iNes: file)
                     GameView(game: game)
             }
         }

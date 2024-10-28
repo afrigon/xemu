@@ -517,6 +517,7 @@ extension MOS6502 {
                 if registers.pc & 0xFF00 == address & 0xFF00 {
                     state.tick = 0
                 } else {
+                    // TODO: fix this from crashing when values are negative
                     state.temp = u8(address >> 8)
                 }
             case 4:

@@ -5,12 +5,13 @@ struct GameView: View {
     let game: Game
     
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             Rectangle()
                 .fill(.backgroundInverse)
                 .ignoresSafeArea()
             
             NESView(game.data)
+                .ignoresSafeArea(edges: .bottom)
         }
     }
 }

@@ -19,7 +19,8 @@ protocol BusDelegate: AnyObject {
 
 class Bus {
     var openBus: u8 = 0x00
-    
+    var openVideoBus: u8 = 0x00
+
     weak var delegate: BusDelegate!
     
     public func nmiSignal() -> Bool {
@@ -45,8 +46,13 @@ class Bus {
     }
     
     @discardableResult
-    public func ppuRead(at address: u16) -> u8? {
-        return delegate.bus(bus: self, didSendReadVideoSignalAt: address)
+    public func ppuRead(at address: u16) -> u8 {
+        guard let data = delegate.bus(bus: self, didSendReadVideoSignalAt: address) else {
+            return openVideoBus
+        }
+
+        openVideoBus = data
+        return data
     }
     
     public func ppuWrite(_ data: u8, at address: u16) {
@@ -69,23 +75,5 @@ class Bus {
     
     public func writeStack(_ data: u8, at address: u8) {
         delegate.bus(bus: self, didSendWriteStackSignalAt: address, data)
-    }
-
-    public func readString(at address: u16) -> String {
-        var result: String = ""
-        var i: u16 = 0
-        
-        while true {
-            let data = read(at: address &+ i)
-            
-            if data == 0x00 {
-                break
-            }
-            
-            result += String(UnicodeScalar(data))
-            i &+= 1
-        }
-        
-        return result
     }
 }

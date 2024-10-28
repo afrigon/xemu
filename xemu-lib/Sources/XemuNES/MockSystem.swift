@@ -113,22 +113,20 @@ extension MockSystem: Debuggable {
         cpu.setRegister(name: name, value: value)
     }
     
-    public func getMemory(in range: Range<Int>) -> [u8] {
-        range.compactMap {
-            guard (0x0000...0xFFFF).contains($0) else {
-                return nil
-            }
-            
-            return bus.read(at: u16($0))
+    public func getMemory(at address: Int) -> u8 {
+        guard (0x0000...0xFFFF).contains(address) else {
+            return 0 // TODO: maybe throw out of bound exception
         }
+        
+        return bus.read(at: u16(address))
     }
     
-    public func setMemory(address: Int, value: u8) {
+    public func setMemory(_ data: u8, at address: Int) {
         guard (0x0000...0xFFFF).contains(address) else {
             return // TODO: maybe throw out of bound exception
         }
         
-        bus.write(value, at: u16(address))
+        bus.write(data, at: u16(address))
     }
 
     public func stepi() throws(XemuError) {

@@ -1,62 +1,22 @@
 @testable import XemuNES
 import Testing
-import Foundation
-import XemuFoundation
-import XemuAsm
 
 @MainActor
 struct MOS6502Tests {
-    func testBlargg(test: String, debug: Bool = false) throws {
-        let nes = try TestData.loadMockSystem(with: "blargg_\(test)")
-        let magic: [u8] = [0xDE, 0xB0, 0x61]
-        var status: u8? = nil
-        
-        while status == 0x80 || status == 0x81 || status == nil {
-            if status == 0x81 {
-                // run for 100ms
-                for _ in 0..<179000 {
-                    try nes.clock()
-                }
-                
-                // finish potential incomplete instruction
-                try nes.stepi()
-
-                nes.reset()
-            }
-            
-            try nes.stepi()
-            
-            if status == nil {
-                if nes.getMemory(in: 0x6001..<0x6004) == magic {
-                    status = nes.bus.read(at: 0x6000)
-                }
-            } else {
-                status = nes.bus.read(at: 0x6000)
-            }
-            
-            if debug {
-                print(nes.status)
-            }
-        }
-
-        print(nes.bus.readString(at: 0x6004))
-        #expect(nes.bus.read(at: 0x6000) == 0x00)
-    }
-    
     @Test(.timeLimit(.minutes(1))) func nestest() async throws {
         // the nestest rom has been modified, the reset vector points to 0xC000
-        let nes = try TestData.loadMockSystem(with: "nestest")
+        let nes = try TestHelper.loadMockSystem(with: "nestest")
         
         while true {
             repeat {
                 try nes.clock()
             } while nes.cpu.state.tick != 0
             
-            print(nes.status)
-            
             if nes.cpu.registers.s > 0xFD {
                 break
             }
+            
+            print(nes.status)
         }
         
         #expect(nes.bus.read(at: 0x02) == 0x00)
@@ -65,83 +25,112 @@ struct MOS6502Tests {
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_registers_reset() async throws {
-        try testBlargg(test: "registers_reset")
+        try TestHelper.testBlargg(test: "registers_reset")
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_ram_reset() async throws {
-        try testBlargg(test: "ram_reset")
+        try TestHelper.testBlargg(test: "ram_reset")
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_basics() async throws {
-        try testBlargg(test: "01-basics")
+        try TestHelper.testBlargg(test: "01-basics", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_implied() async throws {
-        try testBlargg(test: "02-implied")
+        try TestHelper.testBlargg(test: "02-implied", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_immediate() async throws {
-        try testBlargg(test: "03-immediate")
+        try TestHelper.testBlargg(test: "03-immediate", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_zero_page() async throws {
-        try testBlargg(test: "04-zero_page")
+        try TestHelper.testBlargg(test: "04-zero_page", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_zero_page_indexed() async throws {
-        try testBlargg(test: "05-zp_xy")
+        try TestHelper.testBlargg(test: "05-zp_xy", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_absolute() async throws {
-        try testBlargg(test: "06-absolute")
+        try TestHelper.testBlargg(test: "06-absolute", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_absolute_indexed() async throws {
-        try testBlargg(test: "07-abs_xy")
+        try TestHelper.testBlargg(test: "07-abs_xy", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_indexed_indirect_x() async throws {
-        try testBlargg(test: "08-ind_x")
+        try TestHelper.testBlargg(test: "08-ind_x", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_indirect_indexed_y() async throws {
-        try testBlargg(test: "09-ind_y")
+        try TestHelper.testBlargg(test: "09-ind_y", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_branches() async throws {
-        try testBlargg(test: "10-branches")
+        try TestHelper.testBlargg(test: "10-branches", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_stack() async throws {
-        try testBlargg(test: "11-stack")
+        try TestHelper.testBlargg(test: "11-stack", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_jmp_jsr() async throws {
-        try testBlargg(test: "12-jmp_jsr")
+        try TestHelper.testBlargg(test: "12-jmp_jsr", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_rts() async throws {
-        try testBlargg(test: "13-rts")
+        try TestHelper.testBlargg(test: "13-rts", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_rti() async throws {
-        try testBlargg(test: "14-rti")
+        try TestHelper.testBlargg(test: "14-rti", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_brk() async throws {
-        try testBlargg(test: "15-brk")
+        try TestHelper.testBlargg(test: "15-brk", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_special() async throws {
-        try testBlargg(test: "16-special")
+        try TestHelper.testBlargg(test: "16-special", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_cpu_timing() async throws {
-        try testBlargg(test: "cpu_timing")
+        try TestHelper.testBlargg(test: "cpu_timing")
     }
     
-    @Test(.timeLimit(.minutes(1))) func blargg_cpu_interrupts() async throws {
-        try testBlargg(test: "cpu_interrupts")
+    @Test(.timeLimit(.minutes(1))) func blargg_interrupts_cli_latency() async throws {
+        try TestHelper.testBlargg(test: "interrupts_01-cli_latency")
+    }
+    
+    @Test(.timeLimit(.minutes(1))) func blargg_interrupts_nmi_and_brk() async throws {
+        try TestHelper.testBlargg(test: "interrupts_02-nmi_and_brk")
+    }
+    
+    @Test(.timeLimit(.minutes(1))) func blargg_interrupts_nmi_and_irq() async throws {
+        try TestHelper.testBlargg(test: "interrupts_03-nmi_and_irq")
+    }
+    
+    @Test(.timeLimit(.minutes(1))) func blargg_interrupts_irq_and_dma() async throws {
+        try TestHelper.testBlargg(test: "interrupts_04-irq_and_dma")
+    }
+    
+    @Test(.timeLimit(.minutes(1))) func blargg_interrupts_branch_delays_irq() async throws {
+        try TestHelper.testBlargg(test: "interrupts_05-branch_delays_irq")
+    }
+    
+    // TODO: debug why these tests hangs. potentially not writing at $6000 like the others
+    @Test(.timeLimit(.minutes(1))) func blargg_branch_basics() async throws {
+        try TestHelper.testBlargg(test: "branch_01-basics", debug: true)
+    }
+    
+    @Test(.timeLimit(.minutes(1))) func blargg_branch_backward() async throws {
+        try TestHelper.testBlargg(test: "branch_02-backward")
+    }
+    
+    @Test(.timeLimit(.minutes(1))) func blargg_branch_forward() async throws {
+        try TestHelper.testBlargg(test: "branch_03-forward")
     }
 }
 

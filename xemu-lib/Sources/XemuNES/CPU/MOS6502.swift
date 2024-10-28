@@ -94,10 +94,15 @@ public class MOS6502: Codable {
     }
     
     func pollInterrupts() {
+        state.oldNmiPending = state.nmiPending
+        
         let oldNMI = state.nmiLastValue
         state.nmiLastValue = bus.nmiSignal()
         
-        state.nmiPending = oldNMI != state.nmiLastValue
+        if state.nmiLastValue && !oldNMI {
+            state.nmiPending = true
+        }
+        
         state.irqPending = bus.irqSignal()
     }
 
@@ -110,7 +115,7 @@ public class MOS6502: Codable {
         state.tick += 1
         
         if state.tick == 1 {
-            if state.nmiPending {
+            if state.oldNmiPending {
                 state.servicing = .nmi
             } else if state.irqPending {
                 state.servicing = .irq

@@ -25,11 +25,23 @@ class Memory: Codable {
     }
 
     func mirroredRead(at address: u16) -> u8 {
+        let count = data.count
+        
+        guard count > 0 else {
+            return 0
+        }
+        
         return data[address % u16(data.count)]
     }
     
     func mirroredWrite(_ value: u8, at address: u16) {
-        data[address % u16(data.count)] = value
+        let count = data.count
+        
+        guard count > 0 else {
+            return
+        }
+        
+        data[address % u16(count)] = value
     }
     
     func bankedRead(at address: u16, bankIndex: Int, bankSize: Int) -> u8 {
