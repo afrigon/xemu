@@ -77,18 +77,18 @@ public class MOS6502: Codable {
         self.bus = bus
     }
     
-    func read8() -> u8 {
+    @inline(__always) func read8() -> u8 {
         defer { registers.pc &+= 1 }
         
         return bus.read(at: registers.pc)
     }
     
-    func push(_ value: u8) {
+    @inline(__always) func push(_ value: u8) {
         bus.writeStack(value, at: registers.s)
         registers.s &-= 1
     }
     
-    func pop() -> u8 {
+   @inline(__always) func pop() -> u8 {
         registers.s &+= 1
         return bus.readStack(at: registers.s)
     }

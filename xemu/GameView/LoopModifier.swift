@@ -1,12 +1,16 @@
 import SwiftUI
+import CoreVideo
 
 class LoopModifierModel {
     let onUpdate: (Double) -> Void
     let fps: Float?
     
     private lazy var displayLink: CADisplayLink = {
+#if os(macOS)
+        let link = NSScreen.main!.displayLink(target: self, selector: #selector(update))
+#else
         let link = CADisplayLink(target: self, selector: #selector(update))
-        
+#endif
         if let fps {
             link.preferredFrameRateRange = .init(minimum: 1, maximum: Float(fps))
         }

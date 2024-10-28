@@ -14,6 +14,9 @@ public class NES: Emulator, BusDelegate {
     let bus: Bus = Bus()
     var cartridge: Cartridge? = nil
     
+    public var controller1 = Controller()
+    public var controller2 = Controller()
+
     let wram: Memory
     
     public var frame: Data? {
@@ -99,6 +102,10 @@ public class NES: Emulator, BusDelegate {
                     default:
                         return nil
                 }
+            case 0x4016:
+                return controller1.read()
+            case 0x4017:
+                return controller2.read()
             case 0x6000...0xFFFF:
                 return mappedData
             default:
@@ -179,6 +186,9 @@ public class NES: Emulator, BusDelegate {
                     default:
                         break
                 }
+            case 0x4016:
+                controller1.write(data)
+                controller2.write(data)
             case 0x4017:
                 apu.write(data, at: address)
             default:
@@ -221,7 +231,7 @@ public class NES: Emulator, BusDelegate {
         cpu.state.servicing = .reset
     }
     
-    public func clock() throws(XemuError) {
+    @inline(__always) public func clock() throws(XemuError) {
         try cpu.clock()
         
         apu.clock()

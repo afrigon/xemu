@@ -2,6 +2,8 @@ import SwiftUI
 import XemuCore
 
 struct GameView: View {
+    @State var input: NESInput = .init()
+    
     let game: Game
     
     var body: some View {
@@ -10,8 +12,14 @@ struct GameView: View {
                 .fill(.backgroundInverse)
                 .ignoresSafeArea()
             
-            NESView(game.data)
-                .ignoresSafeArea(edges: .bottom)
+            switch game.system {
+                case .nes:
+                    NESView(game.data)
+                        .ignoresSafeArea(edges: .bottom)
+                default:
+                    Color.red
+            }
         }
+        .environment(input)
     }
 }

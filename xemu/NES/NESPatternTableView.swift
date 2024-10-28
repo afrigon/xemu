@@ -21,14 +21,16 @@ struct NESPatternTableView: View {
         VStack {
             TabView {
                 ForEach(images, id: \.self) { image in
-                    Image(platformImage: PlatformImage(cgImage: image))
+                    Image(platformImage: PlatformImage(cgImage: image, size: .init(width: 128, height: 128)))
                         .resizable()
                         .interpolation(.none)
                         .aspectRatio(contentMode: .fit)
                 }
             }
+#if os(iOS)
             .tabViewStyle(.page)
             .indexViewStyle(.page(backgroundDisplayMode: .always))
+#endif
             .onAppear {
                 let banks = decodeBanks()
                 images = banks.compactMap { generateImage($0) }

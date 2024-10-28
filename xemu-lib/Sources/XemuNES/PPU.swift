@@ -56,7 +56,13 @@ class PPU: Codable {
     /// |+-------- Emphasize green (red on PAL/Dendy)
     /// +--------- Emphasize blue
     /// ```
-    var mask: u8 = 0
+    var mask: u8 = 0 {
+        didSet {
+            spritesEnabled = Bool(self.mask & 0b0001_0000)
+            backgroundEnabled = Bool(self.mask & 0b0000_1000)
+            renderingEnabled = Bool(self.mask & 0b0001_1000)
+        }
+    }
     
     /// PPUSTATUS - Rendering events ($2002 read)
     ///
@@ -123,7 +129,8 @@ class PPU: Codable {
     // Shift Registers
     var shiftPatternLO: u16 = 0
     var shiftPatternHI: u16 = 0
-    
+    var shiftAttribute: u16 = 0
+
     var latch: u8 = 0
     var readBuffer: u8 = 0
     private var isOddFrame: Bool = false
@@ -145,17 +152,9 @@ class PPU: Codable {
         self.bus = bus
     }
     
-    var spritesEnabled: Bool {
-        Bool(self.mask & 0b0001_0000)
-    }
-    
-    var backgroundEnabled: Bool {
-        Bool(self.mask & 0b0000_1000)
-    }
-    
-    var renderingEnabled: Bool {
-        Bool(self.mask & 0b0001_1000)
-    }
+    var spritesEnabled: Bool = false
+    var backgroundEnabled: Bool = false
+    var renderingEnabled: Bool = false
     
     var y: u16 {
         get {
@@ -200,10 +199,16 @@ class PPU: Codable {
     private func fetchBackground(subcycle: Int) {
         switch subcycle {
             case 0:
-                incrementCoarseX()
-                
                 shiftPatternLO = shiftPatternLO | patternLO
                 shiftPatternHI = shiftPatternHI | patternHI
+                
+                // coarse_x bit 1 and coarse_y bit 1 select 2 bits from attribute byte
+                let attributeShift = (v & 0b000_00_00010_00000) >> 4 |
+                                     (v & 0b000_00_00000_00010)
+                let attributeValue = attribute >> attributeShift & 0b11
+                shiftAttribute = shiftAttribute << 2 | u16(attributeValue)
+                
+                incrementCoarseX()
             case 1:  // nametable
                 let address = 0x2000 | (v & 0x0FFF)
                 patternIndex = u16(bus.ppuRead(at: address))
@@ -232,12 +237,25 @@ class PPU: Codable {
     }
     
     private func drawPixel() {
-        let patternMask: u16 = 0b1000_0000_0000_0000 >> x
-        let patternShift = 15 - x
-        let paletteIndex = (shiftPatternHI & patternMask) >> (patternShift - 1) |
-                           (shiftPatternLO & patternMask) >> patternShift
+        let background: u8
         
-        frameBuffer[256 * scanline + (dot - 1)] = u8(paletteIndex * 5)
+        if backgroundEnabled || (dot <= 8 && Bool(mask & 0b0000_0010)) {
+            let patternMask: u16 = 0b1000_0000_0000_0000 >> x
+            let patternShift = 15 - x
+            let patternValue = (shiftPatternHI & patternMask) >> (patternShift - 1) |
+            (shiftPatternLO & patternMask) >> patternShift
+            
+            let attributeValue = (shiftAttribute >> 2) & 0b11
+            
+            background = bus.ppuRead(at: 0x3F00 + attributeValue << 2 + patternValue)
+        } else {
+            background = bus.ppuRead(at: 0x3F00)
+        }
+        
+        // TODO: render sprite
+        // TODO: select background vs sprite
+
+        frameBuffer[256 * scanline + (dot - 1)] = background
     }
     
     private func render() {
@@ -247,10 +265,10 @@ class PPU: Codable {
                     // TODO: do fake bg access
                     break
                 case 1...256:
-                    drawPixel()
                     shiftBackgroundRegisters()
                     fetchBackground(subcycle: (dot - 1) % 8)
-                    
+                    drawPixel()
+
                     if dot == 256 {
                         incrementY()
                     }
