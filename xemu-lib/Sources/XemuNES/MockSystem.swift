@@ -134,7 +134,7 @@ extension MockSystem: Debuggable {
         try clock()
         
         // finish the instruction
-        while cpu.state.tick >= 1 && !cpu.state.halted {
+        while cpu.state.tick >= 1 {
             try clock()
         }
     }

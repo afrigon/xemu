@@ -84,8 +84,14 @@ class PPU: Codable {
     ///
     /// - During rendering, used for the scroll position.
     /// - Outside of rendering, used as the current VRAM address.
-    var v: u16 = 0
+    var v: u16 = 0 {
+        didSet {
+            y = v >> 12
+        }
+    }
     
+    var y: u16 = 0
+
     /// Internal Register t
     ///
     /// - During rendering, specifies the starting coarse-x scroll for the next
@@ -155,12 +161,6 @@ class PPU: Codable {
     var spritesEnabled: Bool = false
     var backgroundEnabled: Bool = false
     var renderingEnabled: Bool = false
-    
-    var y: u16 {
-        get {
-            v >> 12
-        }
-    }
 
     func incrementY() {
         if v & 0b111_00_00000_00000 == 0b111_00_00000_00000 {
@@ -409,6 +409,7 @@ class PPU: Codable {
         case oamAddress
         case v
         case t
+        case y
         case x
         case w
         case oam
@@ -423,5 +424,8 @@ class PPU: Codable {
         case isOddFrame
         case needsRender
         case frameBuffer
+        case backgroundEnabled
+        case spritesEnabled
+        case renderingEnabled
     }
 }

@@ -48,11 +48,11 @@ public class NES: Emulator, BusDelegate {
         ppu.bus = bus
     }
     
-    func nmiSignal() -> Bool {
+    @inline(__always) func nmiSignal() -> Bool {
         Bool(ppu.control & ppu.status & 0b1000_0000)
     }
     
-    func irqSignal() -> Bool {
+    @inline(__always) func irqSignal() -> Bool {
         guard !cpu.registers.p.interruptDisabled else {
             return false
         }
@@ -286,7 +286,7 @@ extension NES: Debuggable {
         try clock()
         
         // finish the instruction
-        while cpu.state.tick >= 1 && !cpu.state.halted {
+        while cpu.state.tick >= 1 {
             try clock()
         }
     }

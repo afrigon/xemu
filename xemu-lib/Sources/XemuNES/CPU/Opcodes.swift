@@ -2,21 +2,17 @@ import XemuFoundation
 
 extension MOS6502 {
     
-    func halt() {
-        state.halted = true
-    }
-    
     /// No Operation
     /// The NOP instruction causes no changes to the processor other than the
     /// normal incrementing of the program counter to the next instruction
-    func nop() {
+    @inline(__always) func nop() {
         
     }
     
     /// No Operation
     /// The NOP instruction causes no changes to the processor other than the
     /// normal incrementing of the program counter to the next instruction
-    func nopRead(_ value: u8) {
+    @inline(__always) func nopRead(_ value: u8) {
         
     }
 
@@ -81,7 +77,7 @@ extension MOS6502 {
     /// Return from Subroutine
     /// The RTS instruction is used at the end of a subroutine to return to the
     /// calling routine. It pulls the program counter (minus one) from the stack
-    func rts() throws(XemuError) {
+    func rts() {
         switch state.tick {
             case 2:
                 bus.read(at: registers.pc)

@@ -4,61 +4,31 @@ typealias ReadOpcodeHandler = (u8) -> Void
 typealias ModifyOpcodeHandler = (u8) -> u8
 typealias WriteOpcodeHandler = () -> u8
 
-class AddressingModeHandler {
-    var read: (ReadOpcodeHandler) -> Void
-    var modify: (ModifyOpcodeHandler) -> Void
-    var write: (WriteOpcodeHandler) -> Void
-    
-    init(
-        read: @escaping (ReadOpcodeHandler) -> Void,
-        modify: @escaping (ModifyOpcodeHandler) -> Void,
-        write: @escaping (WriteOpcodeHandler) -> Void
-    ) {
-        self.read = read
-        self.modify = modify
-        self.write = write
-    }
-}
-
 extension MOS6502 {
     
     // Called by Immediate STA. Does nothing and skip the operand byte.
-    func ignoreImmediateWrite(_ fn: WriteOpcodeHandler) {
+    @inline(__always) func ignoreImmediateWrite(_ fn: WriteOpcodeHandler) {
         registers.pc &+= 1
         state.tick = 0
-    }
-
-    // MARK: Unimplemented Addressing Mode
-    
-    func handleUnimplementedRead(_ fn: ReadOpcodeHandler) {
-        fatalError("unimplemented read \(state.opcode.hex(toLength: 2))")
-    }
-    
-    func handleUnimplementedModify(_ fn: ModifyOpcodeHandler) {
-        fatalError("unimplemented modify \(state.opcode.hex(toLength: 2))")
-    }
-
-    func handleUnimplementedWrite(_ fn: WriteOpcodeHandler) {
-        fatalError("unimplemented write \(state.opcode.hex(toLength: 2))")
     }
     
     // MARK: Implied Addressing Mode
     
-    func handleImplied(_ fn: @escaping () -> Void) {
+    @inline(__always) func handleImplied(_ fn: @escaping () -> Void) {
         fn()
         state.tick = 0
     }
     
     // MARK: Accumulator Addressing Mode
     
-    func handleAccumulatorModify(_ fn: ModifyOpcodeHandler) {
+    @inline(__always) func handleAccumulatorModify(_ fn: ModifyOpcodeHandler) {
         registers.a = fn(registers.a)
         state.tick = 0
     }
     
     // MARK: Immediate Addressing Mode
     
-    func handleImmediateRead(_ fn: ReadOpcodeHandler) {
+    @inline(__always) func handleImmediateRead(_ fn: ReadOpcodeHandler) {
         fn(read8())
         state.tick = 0
     }
@@ -398,7 +368,7 @@ extension MOS6502 {
     
     // MARK: Indexed Indirect (X) Addressing Mode
     
-    func handleIndexedIndirectRead(_ fn: ReadOpcodeHandler) {
+    func handleIndexedIndirectXRead(_ fn: ReadOpcodeHandler) {
         switch state.tick {
             case 2:
                 state.lo = read8()
@@ -418,7 +388,7 @@ extension MOS6502 {
         }
     }
     
-    func handleIndexedIndirectModify(_ fn: ModifyOpcodeHandler) {
+    func handleIndexedIndirectXModify(_ fn: ModifyOpcodeHandler) {
         switch state.tick {
             case 2:
                 state.lo = read8()
@@ -443,7 +413,7 @@ extension MOS6502 {
         }
     }
     
-    func handleIndexedIndirectWrite(_ fn: WriteOpcodeHandler) {
+    func handleIndexedIndirectXWrite(_ fn: WriteOpcodeHandler) {
         switch state.tick {
             case 2:
                 state.lo = read8()
@@ -465,7 +435,7 @@ extension MOS6502 {
 
     // MARK: Indirect Indexed (Y) Addressing Mode
     
-    func handleIndirectIndexedRead(_ fn: ReadOpcodeHandler) {
+    func handleIndirectIndexedYRead(_ fn: ReadOpcodeHandler) {
         switch state.tick {
             case 2:
                 state.temp = read8()
@@ -490,7 +460,7 @@ extension MOS6502 {
         }
     }
     
-    func handleIndirectIndexedModify(_ fn: ModifyOpcodeHandler) {
+    func handleIndirectIndexedYModify(_ fn: ModifyOpcodeHandler) {
         switch state.tick {
             case 2:
                 state.temp = read8()
@@ -515,7 +485,7 @@ extension MOS6502 {
         }
     }
     
-    func handleIndirectIndexedWrite(_ fn: WriteOpcodeHandler) {
+    func handleIndirectIndexedYWrite(_ fn: WriteOpcodeHandler) {
         switch state.tick {
             case 2:
                 state.temp = read8()

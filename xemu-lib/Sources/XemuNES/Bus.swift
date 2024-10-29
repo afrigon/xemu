@@ -23,11 +23,11 @@ class Bus {
 
     weak var delegate: BusDelegate!
     
-    public func nmiSignal() -> Bool {
+    @inline(__always) public func nmiSignal() -> Bool {
         delegate.nmiSignal()
     }
     
-    public func irqSignal() -> Bool {
+    @inline(__always) public func irqSignal() -> Bool {
         delegate.irqSignal()
     }
 

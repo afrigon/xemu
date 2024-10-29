@@ -33,7 +33,7 @@ struct MOS6502Tests {
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_basics() async throws {
-        try TestHelper.testBlargg(test: "01-basics", mock: true)
+        try TestHelper.testBlargg(test: "01-basics", debug: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_implied() async throws {

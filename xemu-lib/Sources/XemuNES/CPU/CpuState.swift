@@ -7,7 +7,6 @@ extension MOS6502 {
         var lo: u8 = 0
         var hi: u8 = 0
         var temp: u8 = 0
-        var halted: Bool = false
         
         // Interrupt
         var servicing: InterruptType? = nil
