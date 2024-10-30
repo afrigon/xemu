@@ -76,7 +76,13 @@ class PPU: Codable {
     /// |+-------- Sprite 0 hit flag
     /// +--------- Vblank flag, cleared on read. Unreliable.
     /// ```
-    var status: u8 = 0
+    var status: u8 = 0 {
+        didSet {
+            if Bool(control & status & 0b1000_0000) {
+                bus.requestNMI()
+            }
+        }
+    }
     
     var oamAddress: u8 = 0
     
@@ -142,9 +148,9 @@ class PPU: Codable {
     private var isOddFrame: Bool = false
     
     private var needsRender = true // TODO: having only 1 framebuffer might cause screen tearing if the renderer is not synced with the vblank
-    private var frameBuffer = Data(repeating: 1, count: 256 * 240)
+    private var frameBuffer: [u8] = .init(repeating: 1, count: 256 * 240)
     
-    var frame: Data? {
+    var frame: [u8]? {
         guard needsRender else {
             return nil
         }

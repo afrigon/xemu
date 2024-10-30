@@ -14,8 +14,9 @@ struct GameView: View {
             
             switch game.system {
                 case .nes:
-                    NESView(game.data)
-                        .ignoresSafeArea(edges: .bottom)
+                    NESViewV2(game: game.data, palette: .default)
+//                    NESView(game.data)
+//                        .ignoresSafeArea(edges: .bottom)
                 default:
                     Color.red
             }

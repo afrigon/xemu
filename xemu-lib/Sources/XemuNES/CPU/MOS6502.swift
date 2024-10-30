@@ -27,32 +27,16 @@ public class MOS6502: Codable {
         return bus.readStack(at: registers.s)
     }
     
-    @inline(__always) func pollInterrupts() {
-        state.oldNmiPending = state.nmiPending
-        
-        let oldNMI = state.nmiLastValue
-        state.nmiLastValue = bus.nmiSignal()
-        
-        if state.nmiLastValue && !oldNMI {
-            state.nmiPending = true
-        }
-        
-        state.irqPending = bus.irqSignal()
-    }
-    
     public func clock() throws(XemuError) {
         state.tick += 1
         
         if state.tick == 1 {
-            if state.oldNmiPending {
+            if state.nmiPending {
                 state.servicing = .nmi
             } else if state.irqPending {
                 state.servicing = .irq
             }
         }
-        
-        // TODO: disable polling when taking a branch? https://www.nesdev.org/wiki/CPU_interrupts#Branch_instructions_and_interrupts
-        pollInterrupts()
         
         switch state.servicing {
             case .some(.irq), .some(.nmi):

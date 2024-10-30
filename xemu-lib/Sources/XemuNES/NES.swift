@@ -19,9 +19,12 @@ public class NES: Emulator, BusDelegate {
 
     let wram: Memory
     
-    public var frame: Data? {
+    public var frame: [u8]? {
         ppu.frame
     }
+    
+    public var frameWidth: Int { 256 }
+    public var frameHeight: Int { 240 }
 
     @MainActor
     public init() {
@@ -46,6 +49,14 @@ public class NES: Emulator, BusDelegate {
         cpu.bus = bus
         apu.bus = bus
         ppu.bus = bus
+    }
+    
+    func requestNMI() {
+        cpu.state.nmiPending = true
+    }
+    
+    func requestIRQ() {
+        cpu.state.irqPending = true
     }
     
     @inline(__always) func nmiSignal() -> Bool {

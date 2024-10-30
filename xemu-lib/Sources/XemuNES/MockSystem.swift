@@ -18,23 +18,26 @@ public class MockSystem: Emulator, BusDelegate {
         case cycles
     }
     
-    public var frame: Data? {
-        Data(repeating: 0, count: 256 * 240)
+    public var frame: [u8]? {
+        .init(repeating: 0, count: 256 * 240)
     }
+    
+    public var frameWidth: Int { 256 }
+    public var frameHeight: Int { 240 }
 
     public init() {
         cpu = .init(bus: bus)
         bus.delegate = self
     }
     
-    func nmiSignal() -> Bool {
-        false
+    func requestNMI() {
+        cpu.state.nmiPending = true
     }
     
-    func irqSignal() -> Bool {
-        false
+    func requestIRQ() {
+        cpu.state.irqPending = true
     }
-    
+
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {
         let mappedData = cartridge?.cpuRead(at: address) ?? bus.openBus
         

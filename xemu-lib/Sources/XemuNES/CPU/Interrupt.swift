@@ -60,7 +60,6 @@ extension MOS6502 {
             case 5:
                 if state.nmiPending {
                     state.nmiPending = false
-                    state.oldNmiPending = false
                     state.data = InterruptType.nmi.rawValue
                 } else {
                     state.data = InterruptType.irq.rawValue
