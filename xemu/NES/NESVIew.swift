@@ -3,7 +3,7 @@ import XemuFoundation
 import XemuCore
 import XemuNES
 
-struct NESViewV2: View {
+struct NESView: View {
     @Environment(AppContext.self) var context
     @Environment(NESInput.self) var input
     
