@@ -79,7 +79,7 @@ struct EmulatorIndexedRenderView: View {
     }
     
     private func draw(_ view: MTKView) {
-        guard let frame = emulator.frame else {
+        guard let frame = emulator.frameBuffer else {
             return
         }
         
@@ -153,7 +153,6 @@ struct EmulatorIndexedRenderView: View {
         descriptor.sAddressMode = .clampToEdge
         descriptor.tAddressMode = .clampToEdge
         descriptor.maxAnisotropy = 1
-        descriptor.compareFunction = .always
 
         return device.makeSamplerState(descriptor: descriptor)
     }

@@ -28,7 +28,7 @@ class Bus {
     }
     
     func requestIRQ() {
-        delegate.requestIRQ()
+//        delegate.requestIRQ()
     }
 
     @discardableResult

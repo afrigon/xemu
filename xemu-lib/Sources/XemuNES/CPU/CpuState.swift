@@ -1,7 +1,7 @@
 import XemuFoundation
 
 extension MOS6502 {
-    class CpuState: Codable {
+    struct CpuState: Codable {
         var tick: u8 = 0
         var opcode: u8 = 0
         var lo: u8 = 0

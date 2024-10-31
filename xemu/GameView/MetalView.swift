@@ -2,7 +2,15 @@ import MetalKit
 import SwiftUI
 import Combine
 
-struct MetalView: UIViewRepresentable {
+#if canImport(UIKit)
+typealias ViewRepresentable = UIViewRepresentable
+#endif
+
+#if canImport(AppKit)
+typealias ViewRepresentable = NSViewRepresentable
+#endif
+
+struct MetalView: ViewRepresentable {
     class Coordinator: NSObject, MTKViewDelegate {
         let parent: MetalView
         let onUpdate: (TimeInterval) -> Void
@@ -55,7 +63,8 @@ struct MetalView: UIViewRepresentable {
     func makeCoordinator() -> Coordinator {
         Coordinator(self, onUpdate: onUpdate, onDraw: onDraw)
     }
-
+    
+#if canImport(UIKit)
     func makeUIView(context: Context) -> MTKView {
         let view = MTKView()
         onSetup(view)
@@ -70,4 +79,22 @@ struct MetalView: UIViewRepresentable {
             
         uiView.isPaused = !isRunning
     }
+#endif
+
+#if canImport(AppKit)
+func makeNSView(context: Context) -> MTKView {
+    let view = MTKView()
+    onSetup(view)
+    view.delegate = context.coordinator
+    return view
+}
+
+func updateNSView(_ nsView: MTKView, context: Context) {
+    if nsView.isPaused, isRunning {
+        context.coordinator.time = CACurrentMediaTime()
+    }
+
+    nsView.isPaused = !isRunning
+}
+#endif
 }

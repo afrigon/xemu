@@ -7,3 +7,6 @@ public typealias i8  = Int8
 public typealias i16 = Int16
 public typealias i32 = Int32
 public typealias i64 = Int64
+
+public typealias f32 = Float
+public typealias f64 = Double

@@ -16,6 +16,9 @@ struct GameView: View {
                 case .nes:
                     NESView(game: game.data, palette: .default)
                         .ignoresSafeArea(edges: .bottom)
+#if os(tvOS)
+                        .ignoresSafeArea(edges: .top)
+#endif
                 default:
                     Color.red
             }

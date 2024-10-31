@@ -5,7 +5,7 @@ import XemuDebugger
 import XemuAsm
 
 public class NES: Emulator, BusDelegate {
-    var cycles: UInt = 0
+    var cycles: Int = 0
     
     let cpu: MOS6502
     let apu: APU
@@ -18,13 +18,18 @@ public class NES: Emulator, BusDelegate {
     public var controller2 = Controller()
 
     let wram: Memory
+
+    public let frequency = 1789773
+    public let frameWidth = 256
+    public let frameHeight = 240
     
-    public var frame: [u8]? {
+    public var frameBuffer: [u8]? {
         ppu.frame
     }
     
-    public var frameWidth: Int { 256 }
-    public var frameHeight: Int { 240 }
+    public var audioBuffer: [f32]? {
+        apu.buffer
+    }
 
     @MainActor
     public init() {
@@ -59,21 +64,9 @@ public class NES: Emulator, BusDelegate {
         cpu.state.irqPending = true
     }
     
-    @inline(__always) func nmiSignal() -> Bool {
-        Bool(ppu.control & ppu.status & 0b1000_0000)
-    }
-    
-    @inline(__always) func irqSignal() -> Bool {
-        guard !cpu.registers.p.interruptDisabled else {
-            return false
-        }
-        
-        return apu.frameInterrupt
-    }
-    
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {
         if address == 0x4015 {
-            
+            return apu.read(at: address)
         }
         
         let mappedData = cartridge?.cpuRead(at: address) ?? bus.openBus
@@ -197,6 +190,8 @@ public class NES: Emulator, BusDelegate {
                     default:
                         break
                 }
+            case 0x4000...0x4014:
+                apu.write(data, at: address)
             case 0x4016:
                 controller1.write(data)
                 controller2.write(data)
@@ -245,12 +240,12 @@ public class NES: Emulator, BusDelegate {
     @inline(__always) public func clock() throws(XemuError) {
         try cpu.clock()
         
+        ppu.clock()
+        ppu.clock()
+        ppu.clock()
+        
         apu.clock()
-        
-        ppu.clock()
-        ppu.clock()
-        ppu.clock()
-        
+
         cycles &+= 1
     }
     

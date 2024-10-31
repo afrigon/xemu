@@ -9,7 +9,7 @@ public class MockSystem: Emulator, BusDelegate {
     let bus: Bus = .init()
     var wram: Memory = .init(count: 0x0800)
     var cartridge: Cartridge? = nil
-    var cycles: UInt64 = 0
+    var cycles: Int = 0
     
     enum CodingKeys: CodingKey {
         case cpu
@@ -18,12 +18,17 @@ public class MockSystem: Emulator, BusDelegate {
         case cycles
     }
     
-    public var frame: [u8]? {
-        .init(repeating: 0, count: 256 * 240)
+    public var frameBuffer: [u8]? {
+        nil
     }
     
-    public var frameWidth: Int { 256 }
-    public var frameHeight: Int { 240 }
+    public var audioBuffer: [f32]? {
+        nil
+    }
+    
+    public let frequency = 1789773
+    public let frameWidth = 256
+    public let frameHeight = 240
 
     public init() {
         cpu = .init(bus: bus)
