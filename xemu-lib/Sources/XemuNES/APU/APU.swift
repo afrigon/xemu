@@ -10,11 +10,13 @@ class APU: Codable {
 
     private var bufferReady = false
 
+    private var stagingBuffer: [f32] = .init(repeating: 0, count: APU.stagingCount)
     private var stagingIndex: Int = 0
-    private var stagingBuffer: [f32] = .init(repeating: 0, count: 40)
+    private static let stagingCount: Int = 39
 
     private var sampleIndex: Int = 0
-    private var sampleBuffer: [f32] = .init(repeating: 0, count: 1024)
+    private var sampleBuffer: [f32] = .init(repeating: 0, count: APU.sampleCount)
+    private static let sampleCount: Int = 1024
 
     var buffer: [f32]? {
         guard bufferReady else {
@@ -26,6 +28,7 @@ class APU: Codable {
         return sampleBuffer
     }
 
+    var frameInterrupt: Bool = false
     var disableInterrupt: Bool = false
 
     var frameSequencer: u16 = 0
@@ -61,8 +64,28 @@ class APU: Codable {
         Int(d) * 16 * 16 + Int(n) * 16 + Int(t)
     }
 
-    func read(at address: u16) -> u8 {
-        return 0
+    func read() -> u8 {
+        var status: u8 = 0
+        
+        // square 1
+        // square 2
+        
+        if triangle.lengthCounter.value > 0 {
+            status |= 0b0000_0100
+        }
+        
+        // noise
+        // dmc
+        
+        if frameInterrupt {
+            status |= 0b0100_0000
+        }
+        
+        // dmc intterupt
+        
+        frameInterrupt = false
+        
+        return status
     }
 
     func write(_ data: u8, at address: u16) {
@@ -84,7 +107,7 @@ class APU: Codable {
                 frameSequencer = 0
 
                 if disableInterrupt {
-                    bus.requestIRQ()
+                    frameInterrupt = true
                 }
             default:
                 break
@@ -102,21 +125,21 @@ class APU: Codable {
                         clockHalfFrame()
                     case 22371:
                         clockQuarterFrame()
-//                    case 29828:
-//                        if !disableInterrupt {
-//                            bus.requestIRQ()
-//                        }
+                    case 29828:
+                        if !disableInterrupt {
+                            frameInterrupt = true
+                        }
                     case 29829:
                         if !disableInterrupt {
-                            bus.requestIRQ()
+                            frameInterrupt = true
                         }
 
                         clockQuarterFrame()
                         clockHalfFrame()
                     case 29830:
-//                        if !disableInterrupt {
-//                            bus.requestIRQ()
-//                        }
+                        if !disableInterrupt {
+                            frameInterrupt = true
+                        }
 
                         frameSequencer = 0
                     default:
@@ -161,12 +184,12 @@ class APU: Codable {
         stagingBuffer[stagingIndex] = value
         stagingIndex += 1
 
-        if stagingIndex == 39 {
-            sampleBuffer[sampleIndex] = stagingBuffer.reduce(0, +) / 40
+        if stagingIndex == APU.stagingCount {
+            sampleBuffer[sampleIndex] = stagingBuffer.reduce(0, +) / f32(APU.stagingCount)
             stagingIndex = 0
             sampleIndex += 1
 
-            if sampleIndex == 1023 {
+            if sampleIndex == APU.sampleCount {
                 sampleIndex = 0
                 bufferReady = true
             }
@@ -184,7 +207,7 @@ class APU: Codable {
 //        let tnd = tndTable[tndIndex(t: u8(triangle), n: u8(noise), d: u8(dmc))]
 //
 //        return square + tnd
-        return (f32(triangle.output()) / 15) * 2 - 1
+        return (f32(triangle.output()) / 15)
     }
 
     // TODO: update this with all the keys when done implementing apu

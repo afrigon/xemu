@@ -60,13 +60,17 @@ public class NES: Emulator, BusDelegate {
         cpu.state.nmiPending = true
     }
     
-    func requestIRQ() {
-        cpu.state.irqPending = true
+    func irqSignal() -> Bool {
+        guard !cpu.registers.p.interruptDisabled else {
+            return false
+        }
+        
+        return apu.frameInterrupt
     }
     
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {
         if address == 0x4015 {
-            return apu.read(at: address)
+            return apu.read()
         }
         
         let mappedData = cartridge?.cpuRead(at: address) ?? bus.openBus

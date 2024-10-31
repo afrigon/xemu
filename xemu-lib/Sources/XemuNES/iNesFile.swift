@@ -145,7 +145,7 @@ public struct iNesFile: RomFile {
                 
                 // Flag 9
                 d.advanceBit(by: 7)
-                let tvSystem = try d.takeBit(1) != 0
+                let _ = try d.takeBit(1) != 0 // tv system
                 
                 // Flag 10
                 d.advanceByte(by: 1)
@@ -170,7 +170,7 @@ public struct iNesFile: RomFile {
             case .nes20:
                 
                 // Flag 8
-                let submapper = try d.takeBit(4)
+                let _ = try d.takeBit(4) // submapper
                 let mapperVeryHi = try d.takeBit(4)
                 
                 guard let mapper = MapperType(rawValue: u16(mapperVeryHi) << 8 | u16(mapperHi) << 4 | u16(mapperLo)) else {

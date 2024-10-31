@@ -39,8 +39,8 @@ public class MockSystem: Emulator, BusDelegate {
         cpu.state.nmiPending = true
     }
     
-    func requestIRQ() {
-        cpu.state.irqPending = true
+    func irqSignal() -> Bool {
+        false
     }
 
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {

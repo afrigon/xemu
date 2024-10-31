@@ -38,6 +38,8 @@ public class MOS6502: Codable {
             }
         }
         
+        state.irqPending = bus.irqSignal()
+        
         switch state.servicing {
             case .some(.irq), .some(.nmi):
                 return handleInterrupt()
