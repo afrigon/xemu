@@ -8,6 +8,7 @@ class GameControllerService {
     func start() {
         for controller in GCController.controllers() {
             controllers.append(controller)
+            
             // TODO: Register buttons ?
         }
         

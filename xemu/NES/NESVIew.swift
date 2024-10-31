@@ -10,6 +10,7 @@ struct NESView: View {
     private let palette: [SIMD3<Float>]
     private let nes: NES
     private let game: Data
+    private let audio: AudioService?
 
     @State private var isRunning = true
     @State private var fps: Int = 60
@@ -26,6 +27,7 @@ struct NESView: View {
                     Float(palette.data[$0 + 2]) / 255
                 )
             }
+        self.audio = .init()
     }
     
     var body: some View {
@@ -56,14 +58,19 @@ struct NESView: View {
                 nes.reset()
                 isRunning = true
                 focused = true
+                audio?.start()
             } catch let error {
                 isRunning = false
                 context.error = error
                 context.set(state: .menu)
             }
         }
+        .onDisappear {
+            audio?.stop()
+        }
         .focusable()
         .focused($focused)
+        .focusEffectDisabled()
         .onKeyPress(phases: [.up, .down]) { keyPress in
             let fn: ((NESInputKey) -> Void)? = switch keyPress.phase {
                 case .up: input.keyUp
@@ -100,10 +107,15 @@ struct NESView: View {
         do {
             for _ in 0..<cycles {
                 try nes.clock()
+                
+//                if let buffer = nes.audioBuffer {
+//                    audio?.schedule(buffer)
+//                }
             }
         } catch let error {
             // TODO: do something with nes crash
             print(error)
         }
+        
     }
 }
