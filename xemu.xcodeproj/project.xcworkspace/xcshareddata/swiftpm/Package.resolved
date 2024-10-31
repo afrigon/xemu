@@ -1,5 +1,5 @@
 {
-  "originHash" : "e77aac5eb8a7a3c25aca7d5682e2ef0495a6571a030b3ba0b35c542319f6dd3c",
+  "originHash" : "6d55c9d5e33ddb796be4463d42c240c1d64eed33d45d120bf1c275e495bca599",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -223,7 +223,7 @@
       "location" : "https://github.com/afrigon/XKit",
       "state" : {
         "branch" : "main",
-        "revision" : "88ccd24987ed279b8f5ee4d398249b2fd46561a3"
+        "revision" : "dc38bd18bd8d761d115541ba389b90ae40f2cdb6"
       }
     }
   ],

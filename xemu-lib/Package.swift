@@ -90,7 +90,8 @@ let package = Package(
             name: "XemuNES",
             dependencies: [
                 "XemuAsm",
-                "XemuDebugger"
+                "XemuDebugger",
+                "XKit"
             ],
             path: "Sources/XemuNES",
             exclude: ["References"]

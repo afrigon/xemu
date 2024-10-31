@@ -19,7 +19,7 @@ public class NES: Emulator, BusDelegate {
 
     let wram: Memory
 
-    public let frequency = 1789773
+    public static let frequency = 1789773
     public let frameWidth = 256
     public let frameHeight = 240
     

@@ -3,7 +3,7 @@ import CoreGraphics
 import XemuFoundation
 
 public protocol Emulator: Codable {
-    var frequency: Int { get }
+    static var frequency: Int { get }
     var frameWidth: Int { get }
     var frameHeight: Int { get }
     

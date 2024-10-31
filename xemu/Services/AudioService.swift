@@ -1,50 +1,101 @@
 import AVFoundation
 import XemuFoundation
+import UIKit
 
 class AudioService {
     let engine = AVAudioEngine()
-    let player: AVAudioPlayerNode = AVAudioPlayerNode()
-    let format: AVAudioFormat? = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1)
+    let frameCapacity: AVAudioFrameCount
+    let format: AVAudioFormat
+    
+    var sampleQueue: [f32] = [] // TODO: modify this to handle multiple channels
 
-    let buffer: AVAudioPCMBuffer
-
-    init?() {
-        guard let format,
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 1024) else {
+    init?(sampleRate: Double = 44100, channels: AVAudioChannelCount = 1) {
+        let samplesPerSecond = Int(Double(sampleRate) / 60)
+        var frameCapacity: AVAudioFrameCount = 1
+        
+        while frameCapacity < samplesPerSecond {
+            frameCapacity *= 2
+        }
+        
+        self.frameCapacity = frameCapacity
+        
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: Double(sampleRate), channels: channels) else {
             return nil
         }
-
-        self.buffer = buffer
-
-        engine.attach(player)
-
-        engine.connect(
-            player,
-            to: engine.mainMixerNode,
-            format: format
-        )
+        
+        self.format = format
+        
+        let sourceNode = AVAudioSourceNode(format: format, renderBlock: renderAudio)
+        
+        engine.mainMixerNode.outputVolume = 0
+        engine.attach(sourceNode)
+        engine.connect(sourceNode, to: engine.mainMixerNode, format: format)
+        engine.prepare()
+    }
+    
+    deinit {
+        stop()
     }
 
     func start() {
         try? engine.start()
-        player.play()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.engine.mainMixerNode.outputVolume = 1
+        }
     }
-
-    func stop() {
-        engine.stop()
-        player.stop()
+    
+    @objc func stop() {
+        engine.mainMixerNode.outputVolume = 0
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.engine.stop()
+        }
     }
-
-    func schedule(_ buffer: [Float]) {
-        buffer.withUnsafeBufferPointer { buffer in
-            guard let pointer = buffer.baseAddress else {
-                return
-            }
-
-            self.buffer.floatChannelData?[0].update(from: pointer, count: buffer.count)
+    
+    func renderAudio(
+        isSilenced: UnsafeMutablePointer<ObjCBool>,
+        timestamp: UnsafePointer<AudioTimeStamp>,
+        frameCount: UInt32,
+        outputData: UnsafeMutablePointer<AudioBufferList>
+    ) -> OSStatus {
+        guard !sampleQueue.isEmpty else {
+            return 0
+        }
+        
+//        print("available: \(sampleQueue.count), requested: \(frameCount)")
+//        if sampleQueue.count < frameCount {
+//            print("NOT ENOUGH SAMPLES")
+//        }
+        
+        let count = min(Int(frameCount), sampleQueue.count)
+        let output = UnsafeMutableAudioBufferListPointer(outputData)
+        let channel = UnsafeMutableBufferPointer<Float>(output[0])
+        
+        for i in 0..<count {
+            channel[i] = sampleQueue[i]
+        }
+        
+        // this is a hack to prevent the audio doing from clicks and pops when not enough samples are available.
+        // TODO: make sure enough samples are sent to keep up with playback
+        for i in count..<Int(frameCount) {
+            channel[i] = channel[count - 1]
         }
 
-        self.buffer.frameLength = UInt32(buffer.count)
-        player.scheduleBuffer(self.buffer)
+        sampleQueue.removeFirst(count)
+        
+        return 0
+    }
+
+    func schedule(_ buffer: [f32]) {
+        if !engine.isRunning {
+            start()
+        }
+        
+        sampleQueue.append(contentsOf: buffer)
+    }
+        
+    func schedule(left: [f32], right: [f32]) {
+        // TODO: implement this
     }
 }

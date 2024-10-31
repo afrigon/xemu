@@ -6,6 +6,7 @@ import XemuNES
 struct NESView: View {
     @Environment(AppContext.self) var context
     @Environment(NESInput.self) var input
+    @Environment(\.scenePhase) var scenePhase
     
     private let game: Data
     private let palette: [SIMD3<Float>]
@@ -58,7 +59,6 @@ struct NESView: View {
                 nes.reset()
                 isRunning = true
                 focused = true
-                audio?.start()
             } catch let error {
                 isRunning = false
                 context.error = error
@@ -67,6 +67,17 @@ struct NESView: View {
         }
         .onDisappear {
             audio?.stop()
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if oldPhase != .active && newPhase == .active {
+                audio?.start()
+            }
+            
+            if oldPhase == .active && newPhase != .active {
+                audio?.stop()
+            }
+
+            isRunning = newPhase == .active
         }
         .focusable()
         .focused($focused)
@@ -100,21 +111,21 @@ struct NESView: View {
     }
     
     private func update(_ delta: TimeInterval) {
-        let cycles = Int((Double(1) / 60) * Double(nes.frequency))
+        let cycles = Int((Double(1) / 60) * Double(NES.frequency))
         
         nes.controller1.input = input.encode()
         
         do {
             for _ in 0..<cycles {
                 try nes.clock()
-                
-                if let buffer = nes.audioBuffer {
-                    audio?.schedule(buffer)
-                }
             }
         } catch let error {
             // TODO: do something with nes crash
             print(error)
+        }
+        
+        if let buffer = nes.audioBuffer {
+            audio?.schedule(buffer)
         }
     }
 }

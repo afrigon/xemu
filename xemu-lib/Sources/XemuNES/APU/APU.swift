@@ -1,4 +1,5 @@
 import XemuFoundation
+import XKit
 
 enum FrameSequencerMode: Codable {
     case fourStep
@@ -7,25 +8,32 @@ enum FrameSequencerMode: Codable {
 
 class APU: Codable {
     weak var bus: Bus!
+    
+    private let sampleRate: f64
+    private var cycles: u64 = 0
+    private var sampleCount: u64 = 0
+    private var nextSample: u64
 
-    private var bufferReady = false
-
-    private var stagingBuffer: [f32] = .init(repeating: 0, count: APU.stagingCount)
-    private var stagingIndex: Int = 0
-    private static let stagingCount: Int = 39
-
-    private var sampleIndex: Int = 0
-    private var sampleBuffer: [f32] = .init(repeating: 0, count: APU.sampleCount)
-    private static let sampleCount: Int = 1024
+    private var accumulator: [f32] = []
+    private var stagingBuffer: RingBuffer<f32>
+    private var sampleBuffer: [f32]
+    private var bufferFull = false
 
     var buffer: [f32]? {
-        guard bufferReady else {
-            return nil
+        var buffer: [f32] = []
+        
+        if bufferFull {
+            buffer = sampleBuffer
         }
+        
+        for i in 0..<stagingBuffer.index {
+            buffer.append(stagingBuffer.buffer[i])
+        }
+        
+        stagingBuffer.reset()
+        bufferFull = false
 
-        bufferReady = false
-
-        return sampleBuffer
+        return buffer
     }
 
     var frameInterrupt: Bool = false
@@ -35,9 +43,27 @@ class APU: Codable {
     var frameSequencerMode: FrameSequencerMode = .fourStep
 
     var triangle: TriangleChannel = .init()
+    var noise: NoiseChannel = .init()
 
-    init(bus: Bus) {
+    init(bus: Bus, sampleRate: f64 = 44100) {
         self.bus = bus
+        self.sampleRate = sampleRate
+        self.stagingBuffer = .init(repeating: 0, count: APU.bufferSize(for: sampleRate))
+        self.sampleBuffer = .init(repeating: 0, count: APU.bufferSize(for: sampleRate))
+        
+        nextSample = u64((f64(NES.frequency) / sampleRate))
+    }
+    
+    static func bufferSize(for sampleRate: Double) -> Int {
+        let sampleCount = Int(sampleRate / 60) // samples per frame
+        
+        var size = 1
+        
+        while size < sampleCount {
+            size *= 2
+        }
+        
+        return size
     }
 
     lazy var squareTable: [f32] = {
@@ -74,7 +100,9 @@ class APU: Codable {
             status |= 0b0000_0100
         }
         
-        // noise
+        if noise.lengthCounter.value > 0 {
+            status |= 0b0000_1000
+        }
         // dmc
         
         if frameInterrupt {
@@ -168,58 +196,66 @@ class APU: Codable {
     }
 
     func clockHalfFrame() {
-
+        triangle.lengthCounter.clock()
+        noise.lengthCounter.clock()
     }
 
     func clockQuarterFrame() {
         triangle.clockLinearCounter()
+        noise.envelope.clock()
     }
 
     func clock() {
         clockFrameSequencer()
 
         triangle.clock()
+        noise.clock()
 
-        let value = sample()
-        stagingBuffer[stagingIndex] = value
-        stagingIndex += 1
+        accumulator.append(sample())
 
-        if stagingIndex == APU.stagingCount {
-            sampleBuffer[sampleIndex] = stagingBuffer.reduce(0, +) / f32(APU.stagingCount)
-            stagingIndex = 0
-            sampleIndex += 1
+        if cycles >= nextSample {
+            stagingBuffer.push(accumulator.reduce(0, +) / f32(accumulator.count))
+            accumulator.removeAll(keepingCapacity: true)
 
-            if sampleIndex == APU.sampleCount {
-                sampleIndex = 0
-                bufferReady = true
+            if stagingBuffer.index == 0 {
+                sampleBuffer = stagingBuffer.buffer
+                bufferFull = true
             }
+            
+            sampleCount &+= 1
+            nextSample = ((sampleCount + 1) * u64(NES.frequency)) / u64(sampleRate)
         }
+        
+        cycles &+= 1
     }
 
     func sample() -> f32 {
-//        let square1 = 1
-//        let square2 = 1
-//        let triangle = triangle.output()
-//        let noise = 1
-//        let dmc = 1
-//
-//        let square = squareTable[Int(square1 + square2)]
-//        let tnd = tndTable[tndIndex(t: u8(triangle), n: u8(noise), d: u8(dmc))]
-//
-//        return square + tnd
-        return (f32(triangle.output()) / 15)
+        let square1 = 0
+        let square2 = 0
+        let triangle = triangle.output()
+        let noise = 0
+        let dmc = 0
+
+        let square = squareTable[Int(square1 + square2)]
+        let tnd = tndTable[tndIndex(t: u8(triangle), n: u8(noise), d: u8(dmc))]
+
+        return (square + tnd) * 2 - 1
     }
 
     // TODO: update this with all the keys when done implementing apu
     enum CodingKeys: String, CodingKey {
-        case bufferReady
-        case stagingIndex
+        case cycles
+        case nextSample
+        case sampleCount
+        case sampleRate
+        case accumulator
         case stagingBuffer
-        case sampleIndex
         case sampleBuffer
+        case bufferFull
+        case frameInterrupt
+        case disableInterrupt
         case frameSequencer
         case frameSequencerMode
-        case disableInterrupt
         case triangle
     }
 }
