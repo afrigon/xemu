@@ -66,7 +66,7 @@ public class NES: Emulator, BusDelegate {
     
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {
         if address == 0x4015 {
-            return apu.read(at: address)
+//            return apu.read(at: address)
         }
         
         let mappedData = cartridge?.cpuRead(at: address) ?? bus.openBus
@@ -190,8 +190,8 @@ public class NES: Emulator, BusDelegate {
                     default:
                         break
                 }
-            case 0x4000...0x4014:
-                apu.write(data, at: address)
+//            case 0x4000...0x4014:
+//                apu.write(data, at: address)
             case 0x4016:
                 controller1.write(data)
                 controller2.write(data)

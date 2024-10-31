@@ -79,7 +79,7 @@ struct EmulatorIndexedRenderView: View {
     }
     
     private func draw(_ view: MTKView) {
-        guard let frame = emulator.frame else {
+        guard let frame = emulator.frameBuffer else {
             return
         }
         
