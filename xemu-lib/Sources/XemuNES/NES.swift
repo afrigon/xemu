@@ -194,8 +194,16 @@ public class NES: Emulator, BusDelegate {
                     default:
                         break
                 }
-            case 0x4000...0x4014:
+            case 0x4000...0x4013:
                 apu.write(data, at: address)
+            case 0x4014:
+                cpu.state.servicing = .oamdma
+                cpu.state.oamdmaPage = u16(data) << 8
+                cpu.state.oamdmaTick = 513
+                
+                if cpu.state.isOddCycle {
+                    cpu.state.oamdmaTick += 1
+                }
             case 0x4016:
                 controller1.write(data)
                 controller2.write(data)

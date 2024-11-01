@@ -11,6 +11,29 @@ extension MOS6502 {
         
         /// Maskable Interrupt triggered by a brk instruction or by memory mappers
         case irq = 0xFFFE
+        
+        /// Object Attribute Memory, Direct Memory Access (not an actual interrupt but is handled as one)
+        case oamdma = 0x0000
+    }
+    
+    func handleOAMDMA() {
+        state.oamdmaTick -= 1
+        
+        if state.oamdmaTick == 0 {
+            state.servicing = nil
+        }
+        
+        switch state.oamdmaTick {
+            case 512, 513:
+                break
+            case _ where Bool(state.oamdmaTick & 1):
+                let address = state.oamdmaPage | ((511 - state.oamdmaTick) / 2)
+                state.oamdmaTemp = bus.read(at: address)
+            case _ where !Bool(state.oamdmaTick & 1):
+                bus.write(state.oamdmaTemp, at: 0x2004)
+            default:
+                break
+        }
     }
     
     /// Reset Sequence

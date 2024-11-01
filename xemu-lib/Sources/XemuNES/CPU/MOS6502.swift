@@ -28,6 +28,10 @@ public class MOS6502: Codable {
     }
     
     public func clock() throws(XemuError) {
+        if state.servicing == .oamdma {
+            return handleOAMDMA()
+        }
+            
         state.tick += 1
         
         if state.tick == 1 {
@@ -312,6 +316,8 @@ public class MOS6502: Codable {
             case 0xff: op_ff()
             default: break
         }
+        
+        state.isOddCycle.toggle()
     }
     
     @inline(__always) private func op_a5() {
