@@ -8,7 +8,9 @@ class MapperMMC1: Mapper {
     let pgrrom: Memory
     let chrrom: Memory
     let sram: Memory
+    
     let vram: Memory
+    var nametableLayout: NametableLayout
 
     /// Consecutive-cycle writes
     ///
@@ -62,12 +64,14 @@ class MapperMMC1: Mapper {
     var chrbank0: u8 = 0
     var chrbank1: u8 = 0
     var pgrbank: u8 = 0
+    var sramEnabled: Bool = true
 
     init(pgrrom: Memory, chrrom: Memory, sram: Memory) {
         self.pgrrom = pgrrom
         self.chrrom = chrrom
         self.sram = sram
         self.vram = .init(.init(repeating: 0, count: 0x800))
+        self.nametableLayout = .horizontal
     }
     
     required init(from iNes: iNesFile, saveData: Data) {
@@ -75,6 +79,7 @@ class MapperMMC1: Mapper {
         chrrom = .init(iNes.chrrom)
         sram = .init(saveData)
         vram = .init(.init(repeating: 0, count: 0x800))
+        nametableLayout = iNes.nametableLayout
     }
     
     func cpuRead(at address: u16) -> u8? {
@@ -123,7 +128,9 @@ class MapperMMC1: Mapper {
     func cpuWrite(_ data: u8, at address: u16) {
         switch address {
             case 0x6000..<0x8000:
-                sram.write(data, at: address - 0x6000)
+                if sramEnabled {
+                    sram.write(data, at: address - 0x6000)
+                }
             case 0x8000...0xFFFF:
                 // bit 7 high triggers a reset
                 if Bool(data & 0b1000_0000) {
@@ -142,12 +149,23 @@ class MapperMMC1: Mapper {
                         switch u8(address >> 13 & 0b11) {
                             case 0b00:
                                 control = value
+                                
+                                nametableLayout = switch value & 0b11 {
+                                    case 0b00: .oneScreenLower
+                                    case 0b01: .oneScreenUpper
+                                    case 0b10: .vertical
+                                    case 0b11: .horizontal
+                                    default: .horizontal
+                                }
                             case 0b01:
                                 chrbank0 = value
+                                pgrbank = value >> 2 & 0b11
                             case 0b10:
                                 chrbank1 = value
+                                pgrbank = value >> 2 & 0b11
                             case 0b11:
-                                pgrbank = value
+                                pgrbank = value & 0b0000_1111
+                                sramEnabled = Bool(value & 0b0001_0000)
                             default:
                                 break
                         }
@@ -163,10 +181,44 @@ class MapperMMC1: Mapper {
     }
     
     func ppuRead(at address: u16) -> u8? {
-        nil
+        switch address {
+            case 0x0000...0x0F00:
+                if Bool(control & 0b0001_0000) {
+                    chrrom.bankedRead(at: address, bankIndex: Int(chrbank0), bankSize: 0x1000)
+                } else {
+                    chrrom.bankedRead(at: address, bankIndex: Int(chrbank0) & 0xFFFE, bankSize: 0x1000)
+                }
+            case 0x1000...0x1F00:
+                if Bool(control & 0b0001_0000) {
+                    chrrom.bankedRead(at: address, bankIndex: Int(chrbank1), bankSize: 0x1000)
+                } else {
+                    chrrom.bankedRead(at: address, bankIndex: Int(chrbank0 | 1), bankSize: 0x1000)
+                }
+            case 0x2000...0x3FFF:
+                vram.read(at: nametableLayout.map(address))
+            default:
+                nil
+        }
     }
     
     func ppuWrite(_ data: u8, at address: u16) {
-        
+        switch address {
+            case 0x0000...0x0F00:
+                if Bool(control & 0b0001_0000) {
+                    chrrom.bankedWrite(data, at: address, bankIndex: Int(chrbank0), bankSize: 0x1000)
+                } else {
+                    chrrom.bankedWrite(data, at: address, bankIndex: Int(chrbank0) & 0xFFFE, bankSize: 0x1000)
+                }
+            case 0x1000...0x1F00:
+                if Bool(control & 0b0001_0000) {
+                    chrrom.bankedWrite(data, at: address, bankIndex: Int(chrbank1), bankSize: 0x1000)
+                } else {
+                    chrrom.bankedWrite(data, at: address, bankIndex: Int(chrbank0 | 1), bankSize: 0x1000)
+                }
+            case 0x2000...0x3FFF:
+                vram.write(data, at: nametableLayout.map(address))
+            default:
+                break
+        }
     }
 }

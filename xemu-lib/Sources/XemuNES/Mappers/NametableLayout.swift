@@ -9,6 +9,9 @@ enum NametableLayout: Codable {
     /// Horizontal arrangement ("mirrored vertically")
     case horizontal
     
+    case oneScreenLower
+    case oneScreenUpper
+
     /// Alternative Nametables
     /// https://www.nesdev.org/wiki/NES_2.0#Nametable_layout
     case other
@@ -46,6 +49,22 @@ enum NametableLayout: Codable {
                     upperLeft: OFFSET_0,
                     upperRight: OFFSET_1,
                     lowerLeft: OFFSET_0,
+                    lowerRight: OFFSET_1
+                )
+            case .oneScreenLower:
+                map(
+                    address: address,
+                    upperLeft: OFFSET_0,
+                    upperRight: OFFSET_0,
+                    lowerLeft: OFFSET_0,
+                    lowerRight: OFFSET_0
+                )
+            case .oneScreenUpper:
+                map(
+                    address: address,
+                    upperLeft: OFFSET_1,
+                    upperRight: OFFSET_1,
+                    lowerLeft: OFFSET_1,
                     lowerRight: OFFSET_1
                 )
             default:

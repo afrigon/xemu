@@ -2,6 +2,9 @@ import XemuFoundation
 
 struct TriangleChannel: Codable {
     var control: Bool = false
+    var sequencer: u8 = 0
+    var period: u16 = 0
+    var timer: u16 = 0
 
     var linearCounter: u8 = 0
     var linearCounterReload: u8 = 0
@@ -9,9 +12,6 @@ struct TriangleChannel: Codable {
 
     var lengthCounter: LengthCounter = .init()
 
-    var sequencer: u8 = 0
-    var period: u16 = 0
-    var timer: u16 = 0
 
     mutating func clockLinearCounter() {
         if linearCounterReloadFlag {

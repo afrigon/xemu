@@ -81,7 +81,7 @@ public struct iNesFile: RomFile {
 
     public let wramSize: u8
     public let pgrromSize: u8
-    public let chrromSize: u8
+    public var chrromSize: u8
 
     public let pgrrom: Data
     public let chrrom: Data
@@ -162,11 +162,18 @@ public struct iNesFile: RomFile {
                 let pgrromEnd = d.index
                 pgrrom = data.subdata(in: pgrromStart..<pgrromEnd)
                 
-                let chrromStart = d.index
-                let chrromCount = iNesFile.chrRomUnitSize * Int(chrromSize)
-                d.advanceByte(by: chrromCount)
-                let chrromEnd = d.index
-                chrrom = data.subdata(in: chrromStart..<chrromEnd)
+                
+                // TODO: clean this up
+                if chrromSize == 0 {
+                    chrrom = .init(repeating: 0, count: iNesFile.chrRomUnitSize)
+                } else {
+                    let chrromStart = d.index
+                    let chrromCount = iNesFile.chrRomUnitSize * Int(chrromSize)
+                    d.advanceByte(by: chrromCount)
+                    let chrromEnd = d.index
+                    chrrom = data.subdata(in: chrromStart..<chrromEnd)
+                }
+                
             case .nes20:
                 
                 // Flag 8

@@ -42,6 +42,8 @@ class APU: Codable {
     var frameSequencer: u16 = 0
     var frameSequencerMode: FrameSequencerMode = .fourStep
 
+    var square1: SquareChannel = .init(.square1)
+    var square2: SquareChannel = .init(.square2)
     var triangle: TriangleChannel = .init()
     var noise: NoiseChannel = .init()
 
@@ -118,6 +120,46 @@ class APU: Codable {
 
     func write(_ data: u8, at address: u16) {
         switch address {
+            case 0x4000:
+                let bit5 = Bool(data & 0b0010_0000)
+                square1.duty = SquareChannel.dutyTable[Int(data >> 6)]
+                square1.lengthCounter.halted = bit5
+                square1.envelope.loop = bit5
+                square1.envelope.enabled = !Bool(data & 0b0001_0000)
+                square1.envelope.volume = data & 0b0000_1111
+            case 0x4004:
+                let bit5 = Bool(data & 0b0010_0000)
+                square2.duty = SquareChannel.dutyTable[Int(data >> 6)]
+                square2.lengthCounter.halted = bit5
+                square2.envelope.loop = bit5
+                square2.envelope.enabled = !Bool(data & 0b0001_0000)
+                square2.envelope.volume = data & 0b0000_1111
+            case 0x4001:
+                square1.sweep.enabled = Bool(data & 0b1000_0000)
+                square1.sweep.period = (data & 0b0111_0000) >> 4
+                square1.sweep.negate = Bool(data & 0b0000_1000)
+                square1.sweep.shift = data & 0b0000_0111
+                square1.sweep.reload = true
+            case 0x4005:
+                square2.sweep.enabled = Bool(data & 0b1000_0000)
+                square2.sweep.period = (data & 0b0111_0000) >> 4
+                square2.sweep.negate = Bool(data & 0b0000_1000)
+                square2.sweep.shift = data & 0b0000_0111
+                square2.sweep.reload = true
+            case 0x4002:
+                square1.period = (square1.period & 0b111_0000_0000) | u16(data)
+            case 0x4006:
+                square2.period = (square2.period & 0b111_0000_0000) | u16(data)
+            case 0x4003:
+                square1.lengthCounter.load(data >> 3)
+                square1.period = (square1.period & 0b000_1111_1111) | u16(data & 0b111) << 8
+                square1.sequencer = 0
+                square1.envelope.start = true
+            case 0x4007:
+                square2.lengthCounter.load(data >> 3)
+                square2.period = (square2.period & 0b000_1111_1111) | u16(data & 0b111) << 8
+                square2.sequencer = 0
+                square2.envelope.start = true
             case 0x4008:
                 let control = Bool(data & 0b1000_0000)
                 triangle.control = control
@@ -129,6 +171,18 @@ class APU: Codable {
                 triangle.lengthCounter.load(data >> 3)
                 triangle.period = (triangle.period & 0b000_1111_1111) | u16(data & 0b111) << 8
                 triangle.linearCounterReloadFlag = true
+            case 0x400C:
+                let bit5 = Bool(data & 0b0010_0000)
+                noise.lengthCounter.halted = bit5
+                noise.envelope.loop = bit5
+                noise.envelope.enabled = !Bool(data & 0b0001_0000)
+                noise.envelope.volume = data & 0b0000_1111
+            case 0x400E:
+                noise.mode = Bool(data & 0b1000_0000)
+                noise.period = NoiseChannel.periods[Int(data & 0b0000_1111)]
+            case 0x400F:
+                noise.lengthCounter.load(data >> 3)
+                noise.envelope.start = true
             case 0x4017:
                 disableInterrupt = Bool(data & 0b0100_0000)
                 frameSequencerMode = (data & 0b1000_0000) == 0 ? .fourStep : .fiveStep
@@ -196,11 +250,18 @@ class APU: Codable {
     }
 
     func clockHalfFrame() {
+        square1.lengthCounter.clock()
+        square2.lengthCounter.clock()
         triangle.lengthCounter.clock()
         noise.lengthCounter.clock()
+        
+        square1.clockSweep()
+        square2.clockSweep()
     }
 
     func clockQuarterFrame() {
+        square1.envelope.clock()
+        square2.envelope.clock()
         triangle.clockLinearCounter()
         noise.envelope.clock()
     }
@@ -210,7 +271,12 @@ class APU: Codable {
 
         triangle.clock()
         noise.clock()
-
+        
+        if cycles & 1 == 0 {
+            square1.clock()
+            square2.clock()
+        }
+            
         accumulator.append(sample())
 
         if cycles >= nextSample {
@@ -230,16 +296,16 @@ class APU: Codable {
     }
 
     func sample() -> f32 {
-        let square1 = 0
-        let square2 = 0
+        let square1 = square1.output()
+        let square2 = square2.output()
         let triangle = triangle.output()
-        let noise = 0
+        let noise = noise.output()
         let dmc = 0
 
         let square = squareTable[Int(square1 + square2)]
         let tnd = tndTable[tndIndex(t: u8(triangle), n: u8(noise), d: u8(dmc))]
-
-        return (square + tnd) * 2 - 1
+        
+        return ((square + tnd) * 2 - 1) * 0.2
     }
 
     // TODO: update this with all the keys when done implementing apu
@@ -256,6 +322,9 @@ class APU: Codable {
         case disableInterrupt
         case frameSequencer
         case frameSequencerMode
+        case square1
+        case square2
         case triangle
+        case noise
     }
 }

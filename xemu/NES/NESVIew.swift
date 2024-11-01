@@ -57,8 +57,8 @@ struct NESView: View {
             do throws(XemuError) {
                 try nes.load(program: game)
                 nes.reset()
-                isRunning = true
                 focused = true
+                isRunning = true
             } catch let error {
                 isRunning = false
                 context.error = error
@@ -66,17 +66,16 @@ struct NESView: View {
             }
         }
         .onDisappear {
-            audio?.stop()
+            isRunning = false
         }
-        .onChange(of: scenePhase) { oldPhase, newPhase in
-            if oldPhase != .active && newPhase == .active {
+        .onChange(of: isRunning) {
+            if isRunning {
                 audio?.start()
-            }
-            
-            if oldPhase == .active && newPhase != .active {
+            } else {
                 audio?.stop()
             }
-
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
             isRunning = newPhase == .active
         }
         .focusable()
@@ -98,10 +97,10 @@ struct NESView: View {
                 case "a": fn(.left)
                 case "s": fn(.down)
                 case "d": fn(.right)
-                case "m": fn(.start)
-                case "n": fn(.select)
-                case "p": fn(.b)
-                case "o": fn(.a)
+                case "i": fn(.start)
+                case "u": fn(.select)
+                case "k": fn(.b)
+                case "j": fn(.a)
                 default:
                     return .ignored
             }
