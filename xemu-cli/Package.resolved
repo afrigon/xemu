@@ -1,5 +1,5 @@
 {
-  "originHash" : "3fbce13932e14f18d70acd8983e748f4060a482275cc5e48d8a8fde389938119",
+  "originHash" : "9468f9910dbc7cbc91859218e6754eed409d308350213cf15cb4204d935481b8",
   "pins" : [
     {
       "identity" : "prism",
@@ -11,12 +11,12 @@
       }
     },
     {
-      "identity" : "stylx",
+      "identity" : "xkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/afrigon/stylx",
+      "location" : "https://github.com/afrigon/XKit",
       "state" : {
         "branch" : "main",
-        "revision" : "9877f0f7c7561f818913841c0a0fdd8ddf839c7b"
+        "revision" : "dc38bd18bd8d761d115541ba389b90ae40f2cdb6"
       }
     }
   ],

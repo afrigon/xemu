@@ -5,7 +5,7 @@ import XemuCore
 public struct iNesFile: RomFile {
     
     /// ROM image format version
-    enum Version {
+    public enum Version {
         
         /// iNES ROM image
         case iNes
@@ -22,7 +22,7 @@ public struct iNesFile: RomFile {
         }
     }
     
-    enum ConsoleType: UInt {
+    public enum ConsoleType: UInt {
         
         /// Nintendo Entertainment System/Family Computer
         case nes = 0
@@ -89,19 +89,19 @@ public struct iNesFile: RomFile {
     // Flag 6
     
     /// Hard-wired nametable layout
-    let nametableLayout: NametableLayout
+    public let nametableLayout: NametableLayout
     
     /// "Battery" and other non-volatile memory
-    let hasBattery: Bool
+    public let hasBattery: Bool
     
     /// 512-byte Trainer present between Header and PRG-ROM data
-    let hasTrainer: Bool
+    public let hasTrainer: Bool
     
     // Flag 7
-    let consoleType: ConsoleType
-    let version: Version
+    public let consoleType: ConsoleType
+    public let version: Version
     
-    let mapper: MapperType
+    public let mapper: MapperType
 
     // Flag 8
 
@@ -137,6 +137,7 @@ public struct iNesFile: RomFile {
                     throw .notImplemented
                 }
                 
+                print(mapper)
                 self.mapper = mapper
                 
                 // TODO: double check past this

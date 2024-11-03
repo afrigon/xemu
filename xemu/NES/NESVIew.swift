@@ -66,6 +66,7 @@ struct NESView: View {
             }
         }
         .onDisappear {
+            audio?.stop()
             isRunning = false
         }
         .onChange(of: isRunning) {
@@ -121,6 +122,7 @@ struct NESView: View {
         } catch let error {
             // TODO: do something with nes crash
             print(error)
+            isRunning = false
         }
         
         if let buffer = nes.audioBuffer {

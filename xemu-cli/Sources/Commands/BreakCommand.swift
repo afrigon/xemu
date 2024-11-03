@@ -2,7 +2,7 @@ import XemuFoundation
 import XemuDebugger
 
 struct BreakCommand: Command {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         name: "breakpoints",
         description: "Creates a breakpoint at the given address."
     )
@@ -21,7 +21,7 @@ struct BreakCommand: Command {
         }
     }
     
-    func run(context: XemuCLI) throws(XemuError) {
+    func run(context: AppContext) throws(XemuError) {
         guard let address else {
             Output.shared.print("Please provide an address. example: break 0x1234")
             return

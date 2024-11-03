@@ -1,7 +1,7 @@
 import XemuFoundation
 
 struct InfoCommand: Command {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         name: "info",
         description: "Lists information about the argument, or lists what possible arguments are if none are provided."
     )
@@ -16,7 +16,7 @@ struct InfoCommand: Command {
         argument = arguments.first
     }
     
-    func run(context: XemuCLI) throws(XemuError) {
+    func run(context: AppContext) throws(XemuError) {
         if let argument {
             switch argument {
                 case "stack", "s":

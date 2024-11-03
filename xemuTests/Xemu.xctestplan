@@ -47,10 +47,10 @@
               "blargg_cpu_timing()",
               "blargg_instrs_v5()",
               "blargg_interrupts_branch_delays_irq()",
-              "blargg_interrupts_cli_latency()",
               "blargg_interrupts_irq_and_dma()",
-              "blargg_interrupts_nmi_and_brk()",
-              "blargg_interrupts_nmi_and_irq()"
+              "blargg_interrupts_nmi_and_irq()",
+              "blargg_ram_reset()",
+              "blargg_registers_reset()"
             ]
           }
         ]

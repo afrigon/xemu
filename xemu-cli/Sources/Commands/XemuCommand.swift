@@ -2,7 +2,7 @@ import Prism
 import XemuFoundation
 
 struct XemuCommand: Command {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         name: "xemu",
         description: "The entry point for Xemu commands",
         subcommands: [
@@ -28,7 +28,7 @@ struct XemuCommand: Command {
         subcommand = arguments.first
     }
     
-    func run(context: XemuCLI) throws(XemuError) {
+    func run(context: AppContext) throws(XemuError) {
         if let subcommand {
             Output.shared.prism {
                 ForegroundColor(.red, "error: ")

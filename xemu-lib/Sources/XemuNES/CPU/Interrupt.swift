@@ -83,10 +83,12 @@ extension MOS6502 {
             case 5:
                 if state.nmiPending {
                     state.nmiPending = false
+                    state.nmiSignal = false
                     state.data = InterruptType.nmi.rawValue
                 } else {
                     state.data = InterruptType.irq.rawValue
                 }
+                
                 push(registers.p.value(b: false))
             case 6:
                 registers.pc = (registers.pc & 0xFF00) | u16(bus.read(at: state.data))
@@ -114,10 +116,12 @@ extension MOS6502 {
             case 5:
                 if state.nmiPending {
                     state.nmiPending = false
+                    state.nmiSignal = false
                     state.data = InterruptType.nmi.rawValue
                 } else {
                     state.data = InterruptType.irq.rawValue
                 }
+                
                 // the b flag is set to true even when the brk gets hijacked by an nmi
                 push(registers.p.value(b: true))
             case 6, 7:

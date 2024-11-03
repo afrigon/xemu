@@ -3,12 +3,12 @@ import XemuFoundation
 import XemuDebugger
 
 struct ContextCommand: Command {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         name: "context",
         description: "Display an overview of the emulator"
     )
     
-    func run(context: XemuCLI) throws(XemuError) {
+    func run(context: AppContext) throws(XemuError) {
         guard let emulator = context.emulator else {
             throw .emulatorNotSet
         }
@@ -25,7 +25,6 @@ struct ContextCommand: Command {
     }
     
     // TODO: implement legend
-    @MainActor
     private func legend() {
         Output.shared.prism {
             "[ Legend: "
@@ -35,9 +34,8 @@ struct ContextCommand: Command {
         }
     }
 
-    @MainActor
     private func divider(title: String? = nil) {
-        var width = CURRENT_OUTPUT_SIZE.width
+        var width = Output.shared.currentSize.width
         
         if width <= 0 {
             width = 80

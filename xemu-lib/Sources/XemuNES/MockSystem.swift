@@ -35,8 +35,8 @@ public class MockSystem: Emulator, BusDelegate {
         bus.delegate = self
     }
     
-    func requestNMI() {
-        cpu.state.nmiPending = true
+    func setNMI(_ value: Bool) {
+        cpu.state.nmiSignal = value
     }
     
     func irqSignal() -> Bool {

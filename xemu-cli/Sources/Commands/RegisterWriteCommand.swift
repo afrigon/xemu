@@ -3,7 +3,7 @@ import XemuFoundation
 import XemuDebugger
 
 struct RegisterWriteCommand: Command {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         name: "write",
         description: "Modify a single register value."
     )
@@ -23,7 +23,7 @@ struct RegisterWriteCommand: Command {
         } ?? 0
     }
     
-    func run(context: XemuCLI) throws(XemuError) {
+    func run(context: AppContext) throws(XemuError) {
         guard let emulator = context.emulator else {
             throw .emulatorNotSet
         }

@@ -120,7 +120,7 @@ struct MOS6502Tests {
         try TestHelper.testBlargg(test: "interrupts_05-branch_delays_irq")
     }
     
-    // TODO: debug why these tests hangs. potentially not writing at $6000 like the others
+    // TODO: not writing at $6000 like the others, handle differently
     @Test(.timeLimit(.minutes(1))) func blargg_branch_basics() async throws {
         try TestHelper.testBlargg(test: "branch_01-basics", debug: true)
     }

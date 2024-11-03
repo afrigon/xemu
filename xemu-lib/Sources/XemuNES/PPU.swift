@@ -32,7 +32,7 @@ class PPU: Codable {
     /// +--------- Vblank NMI enable (0: off, 1: on)
     /// ```
     var control: u8 = 0
-    
+
     /// PPUMASK - Rendering settings ($2001 write)
     /// PPUMASK controls the rendering of sprites and backgrounds, as well as color effects.
     ///
@@ -78,9 +78,7 @@ class PPU: Codable {
     /// ```
     var status: u8 = 0 {
         didSet {
-            if Bool(control & status & 0b1000_0000) {
-                bus.requestNMI()
-            }
+            bus.setNMI(Bool(control & status & 0b1000_0000))
         }
     }
     
@@ -131,7 +129,9 @@ class PPU: Codable {
     var w: Bool = false
     
     var oam: [u8] = .init(repeating: 0, count: 256)
-    
+    var oamSecondary: [Sprite?] = .init(repeating: nil, count: 8)
+    var spriteZeroFound: Bool = false
+
     // Internal latches, holds the data before being fed to the appropriate shift registers
     var patternIndex: u16 = 0
     var attribute: u8 = 0
@@ -145,10 +145,11 @@ class PPU: Codable {
 
     var latch: u8 = 0
     var readBuffer: u8 = 0
+    var suppressVblank: Bool = false
     private var isOddFrame: Bool = false
     
-    private var needsRender = true // TODO: having only 1 framebuffer might cause screen tearing if the renderer is not synced with the vblank
-    private var frameBuffer: [u8] = .init(repeating: 1, count: 256 * 240)
+    private var needsRender = true
+    private var frameBuffer: [u8] = .init(repeating: 0, count: 256 * 240)
     
     var frame: [u8]? {
         guard needsRender else {
@@ -201,20 +202,46 @@ class PPU: Codable {
         shiftPatternLO <<= 1
         shiftPatternHI <<= 1
     }
+    
+    private func shiftSprites() {
+        for i in 0..<8 {
+            guard var sprite = oamSecondary[i] else {
+                continue
+            }
+            
+            guard sprite.x == 0 else {
+                sprite.x -= 1
+                oamSecondary[i] = sprite
+                continue
+            }
+            
+            if Bool(sprite.attribute & 0b0100_0000) {
+                sprite.patternLO = (sprite.patternLO ?? 0) >> 1
+                sprite.patternHI = (sprite.patternHI ?? 0) >> 1
+            } else {
+                sprite.patternLO = (sprite.patternLO ?? 0) << 1
+                sprite.patternHI = (sprite.patternHI ?? 0) << 1
+            }
+            
+            oamSecondary[i] = sprite
+        }
+    }
 
     private func fetchBackground(subcycle: Int) {
         switch subcycle {
             case 0:
-                shiftPatternLO = shiftPatternLO | patternLO
-                shiftPatternHI = shiftPatternHI | patternHI
-                
-                // coarse_x bit 1 and coarse_y bit 1 select 2 bits from attribute byte
-                let attributeShift = (v & 0b000_00_00010_00000) >> 4 |
-                                     (v & 0b000_00_00000_00010)
-                let attributeValue = attribute >> attributeShift & 0b11
-                shiftAttribute = shiftAttribute << 2 | u16(attributeValue)
-                
-                incrementCoarseX()
+                if dot != 321 {
+                    shiftPatternLO = shiftPatternLO | patternLO
+                    shiftPatternHI = shiftPatternHI | patternHI
+                    
+                    // coarse_x bit 1 and coarse_y bit 1 select 2 bits from attribute byte
+                    let attributeShift = (v & 0b000_00_00010_00000) >> 4 |
+                    (v & 0b000_00_00000_00010)
+                    let attributeValue = attribute >> attributeShift & 0b11
+                    shiftAttribute = shiftAttribute << 2 | u16(attributeValue)
+                    
+                    incrementCoarseX()
+                }
             case 1:  // nametable
                 let address = 0x2000 | (v & 0x0FFF)
                 patternIndex = u16(bus.ppuRead(at: address))
@@ -242,26 +269,156 @@ class PPU: Codable {
         }
     }
     
+    private func resetSprites() {
+        for i in 0..<8 {
+            oamSecondary[i] = nil
+        }
+    }
+    
+    // TODO: should this be done during background fetches
+    private func findVisibleSprites() {
+        let spriteSize: u8 = Bool(control & 0b0010_0000) ? 16 : 8
+        
+        spriteZeroFound = false
+        
+        resetSprites()
+        
+        var count = 0
+        
+        for i in 0..<64 {
+            let index = i * 4
+            
+            let y = oam[index]
+            
+            guard scanline >= y && scanline < y + spriteSize else {
+                continue
+            }
+            
+            guard count < 8 else {
+                return status |= 0b0010_0000 // sprite overflow
+            }
+            
+            oamSecondary[count] = Sprite(
+                x: oam[index + 3],
+                y: y,
+                patternIndex: oam[index + 1],
+                attribute: oam[index + 2]
+            )
+            
+            if i == 0 {
+                spriteZeroFound = true
+            }
+                
+            count += 1
+        }
+    }
+    
+    private func fetchSprites(subcycle: Int) {
+        switch subcycle {
+            case 1, 3:
+                bus.ppuRead(at: 0x2000 | (v & 0x0FFF))
+            case 5, 7:
+                let index = (dot - 257) / 8
+                
+                guard var sprite = oamSecondary[index] else {
+                    return
+                }
+                
+                let spriteSize: u8 = Bool(control & 0b0010_0000) ? 16 : 8
+                
+                var patternIndex = u16(sprite.patternIndex)
+                var patternAddress: u16 = 0x0000
+
+                if spriteSize == 16 {
+                    if Bool(patternIndex & 1) {
+                        patternAddress = 0x1000
+                    }
+                    
+                    patternIndex &= 0b1111_1110
+                } else {
+                    if Bool(control & 0b0000_1000) {
+                        patternAddress = 0x1000
+                    }
+                }
+                
+                var offsetY = scanline - Int(sprite.y)
+                if Bool(sprite.attribute & 0b1000_0000) { // vertical flip
+                    offsetY = Int(spriteSize - 1) - offsetY
+                }
+                
+                if offsetY >= 8 {
+                    offsetY -= 8
+                    patternIndex += 1
+                }
+                offsetY %= 8
+                
+                patternAddress |= (patternIndex * 16 + u16(offsetY)) & 0x0FFF
+                
+                switch subcycle {
+                    case 5:
+                        sprite.patternLO = bus.ppuRead(at: patternAddress)
+                    case 7:
+                        sprite.patternHI = bus.ppuRead(at: patternAddress + 8)
+                    default:
+                        break
+                }
+                
+                oamSecondary[index] = sprite
+            default:
+                break
+        }
+    }
+    
     private func drawPixel() {
         let background: u8
+        let backgroundPatternValue: u16
         
         if backgroundEnabled || (dot <= 8 && Bool(mask & 0b0000_0010)) {
             let patternMask: u16 = 0b1000_0000_0000_0000 >> x
             let patternShift = 15 - x
-            let patternValue = (shiftPatternHI & patternMask) >> (patternShift - 1) |
+            backgroundPatternValue = (shiftPatternHI & patternMask) >> (patternShift - 1) |
             (shiftPatternLO & patternMask) >> patternShift
             
             let attributeValue = (shiftAttribute >> 2) & 0b11
             
-            background = bus.ppuRead(at: 0x3F00 + attributeValue << 2 + patternValue)
+            background = bus.ppuRead(at: 0x3F00 + attributeValue << 2 + backgroundPatternValue)
         } else {
             background = bus.ppuRead(at: 0x3F00)
+            backgroundPatternValue = 0
         }
         
-        // TODO: render sprite
-        // TODO: select background vs sprite
-
         frameBuffer[256 * scanline + (dot - 1)] = background
+        
+        if spritesEnabled || (dot <= 8 && Bool(mask & 0b0000_0100)) {
+            for (i, sprite) in oamSecondary.enumerated() {
+                guard let sprite, sprite.x == 0 else {
+                    continue
+                }
+                
+                let patternValue = if Bool(sprite.attribute & 0b0100_0000) { // horizontal flip
+                    (((sprite.patternHI ?? 0) & 0b0000_0001) << 1) |
+                    (((sprite.patternLO ?? 0) & 0b0000_0001)     )
+                } else {
+                    (((sprite.patternHI ?? 0) & 0b1000_0000) >> 6) |
+                    (((sprite.patternLO ?? 0) & 0b1000_0000) >> 7)
+                }
+                
+                guard Bool(patternValue) else {
+                    continue
+                }
+                
+                if spriteZeroFound && i == 0 && Bool(backgroundPatternValue) {
+                    status |= 0b0100_0000
+                }
+                
+                if !Bool(backgroundPatternValue) || !Bool(sprite.attribute & 0b0010_0000) { // priority
+                    let attributeValue = u16(sprite.attribute & 0b11)
+                    frameBuffer[256 * scanline + (dot - 1)] = bus.ppuRead(at: 0x3f10 + attributeValue << 2 + u16(patternValue))
+                }
+                
+                break
+            }
+        }
     }
     
     private func render() {
@@ -270,32 +427,30 @@ class PPU: Codable {
                 case 0:
                     // TODO: do fake bg access
                     break
+
                 case 1...256:
                     shiftBackgroundRegisters()
+                    shiftSprites()
+                    
                     fetchBackground(subcycle: (dot - 1) % 8)
                     drawPixel()
 
                     if dot == 256 {
                         incrementY()
                     }
-                case 257...320:
-                    if dot == 257 {
-                        v &= 0b111_10_11111_00000
-                        v |= t & 0b01_00000_11111
-                    }
+                case 257:
+                    v &= 0b111_10_11111_00000
+                    v |= t & 0b01_00000_11111
                     
-                    // TODO: fetch sprites
+                    findVisibleSprites()
+                    fetchSprites(subcycle: (dot - 1) % 8)
+                case 258...320:
+                    fetchSprites(subcycle: (dot - 1) % 8)
                 case 321...336:
                     shiftBackgroundRegisters()
                     fetchBackground(subcycle: (dot - 1) % 8)
-                    
-                case 338:
-                    // TODO: fake nt fetch
-                    break
-                case 340:
-                    // TODO: fake nt fetch
-                    break
-
+                case 338, 340:
+                    self.patternIndex = u16(bus.ppuRead(at: 0x2000 | (v & 0x0FFF)))
                 default:
                     break
             }
@@ -319,18 +474,22 @@ class PPU: Codable {
     
     private func vblank() {
         if dot == 1 {
-            status |= 0b1000_0000
+            if !suppressVblank {
+                status |= 0b1000_0000
+            }
             
             if renderingEnabled {
                 needsRender = true
             }
+            
+            suppressVblank = false
         }
     }
     
     private func prerender() {
         guard renderingEnabled else {
             if dot == 1 {
-                status &= 0b0111_1111
+                status &= 0b0001_1111
             }
             
             return
@@ -342,36 +501,25 @@ class PPU: Codable {
             case 257:
                 v &= 0b111_10_11111_00000
                 v |= t & 0b000_01_00000_11111
+                
+                resetSprites()
+                fetchSprites(subcycle: (dot - 1) % 8)
             case 258...279:
-                // TODO: fetch sprites
-                break
+                fetchSprites(subcycle: (dot - 1) % 8)
             case 280...304:
                 v &= 0b000_01_00000_11111
                 v |= t & 0b111_10_11111_00000
                 
-                // TODO: fetch sprites
+                fetchSprites(subcycle: (dot - 1) % 8)
             case 305...320:
-                // TODO: fetch sprites
-                break
+                fetchSprites(subcycle: (dot - 1) % 8)
             case 321...336:
                 shiftBackgroundRegisters()
                 fetchBackground(subcycle: (dot - 1) % 8)
             case 338:
-                // TODO: fake nt fetch
-                break
+                self.patternIndex = u16(bus.ppuRead(at: 0x2000 | (v & 0x0FFF)))
             case 340:
-                // TODO: fake nt fetch
-                
-                // The first dot after an odd frame is skipped,
-                if isOddFrame {
-                    
-                    // these counter will be incremented before the cycle ends
-                    scanline = 0
-                    dot = 0
-                    isOddFrame = false
-                } else {
-                    isOddFrame = true
-                }
+                self.patternIndex = u16(bus.ppuRead(at: 0x2000 | (v & 0x0FFF)))
             default:
                 break
         }
@@ -392,8 +540,9 @@ class PPU: Codable {
             default:
                 break
         }
-        
+
         dot += 1
+        
         if dot > 340 {
             dot = 0
             scanline += 1
@@ -401,11 +550,15 @@ class PPU: Codable {
             if scanline > 261 {
                 scanline = 0
                 isOddFrame.toggle()
+                
+                if isOddFrame && renderingEnabled {
+                    dot += 1
+                }
             }
         }
     }
     
-    // TODO: update this with all the keys when done implementing apu
+    // TODO: update this with all the keys when done implementing ppu
     enum CodingKeys: CodingKey {
         case dot
         case scanline
@@ -433,5 +586,15 @@ class PPU: Codable {
         case backgroundEnabled
         case spritesEnabled
         case renderingEnabled
+    }
+    
+    struct Sprite: Codable {
+        var x: u8
+        var y: u8
+        var patternIndex: u8
+        var attribute: u8
+        
+        var patternLO: u8? = nil
+        var patternHI: u8? = nil
     }
 }

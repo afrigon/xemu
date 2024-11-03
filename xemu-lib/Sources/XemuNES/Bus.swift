@@ -1,7 +1,7 @@
 import XemuFoundation
 
 protocol BusDelegate: AnyObject {
-    func requestNMI()
+    func setNMI(_ value: Bool)
     func irqSignal() -> Bool
 
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8?
@@ -23,8 +23,8 @@ class Bus {
 
     weak var delegate: BusDelegate!
     
-    func requestNMI() {
-        delegate.requestNMI()
+    func setNMI(_ value: Bool) {
+        delegate.setNMI(value)
     }
     
     func irqSignal() -> Bool {

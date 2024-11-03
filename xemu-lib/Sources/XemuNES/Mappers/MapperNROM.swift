@@ -34,8 +34,6 @@ class MapperNROM: Mapper {
         switch address {
             case 0x6000..<0x8000:
                 sram.write(data, at: address - 0x6000)
-            case 0x8000...0xFFFF:
-                pgrrom.mirroredWrite(data, at: address - 0x8000)
             default:
                 break
         }

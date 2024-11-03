@@ -7,18 +7,11 @@ import XemuDebugger
 import XemuNES
 
 class XemuCLI {
-    var emulator: (any Emulator & Debuggable)? = MockSystem()  // TODO: remove this and implement an emulator command
-    var program: Data? = nil
-    var breakpoints: [Breakpoint] = []
+    var context: AppContext = .init()
     
-    @MainActor
     func run() {
-        Output.shared.startMonitoring()
+//        Output.shared.startMonitoring()
         
-        run("""
-file /Users/xehos/Downloads/02-implied.nes
-context
-""")
 
         let prompt = Prism { ForegroundColor(.green, Prompts.prompt) }
         var lastCommand: String = ""
@@ -41,7 +34,6 @@ context
         }
     }
     
-    @MainActor
     func run(_ input: String) {
         let commands = input
             .split(separator: "\n")
@@ -57,7 +49,7 @@ context
                     continue
                 }
                 
-                try command.run(context: self)
+                try command.run(context: context)
             } catch let error {
                 Output.shared.print(error.message.stringKey ?? "")
             }

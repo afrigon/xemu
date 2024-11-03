@@ -13,7 +13,9 @@ extension MOS6502 {
         var servicing: InterruptType? = nil
         var irqPending: Bool = false
         var nmiPending: Bool = false
-        
+        var nmiSignal: Bool = false
+        var nmiOldSignal: Bool = false
+
         var oamdmaPage: u16 = 0
         var oamdmaTick: u16 = 0
         var oamdmaTemp: u8 = 0

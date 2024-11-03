@@ -3,7 +3,7 @@ import XemuFoundation
 import XemuDebugger
 
 struct RegisterReadCommand: Command {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         name: "read",
         description: "Dump the contents of one or more register values. If no register is specified, dumps them all."
     )
@@ -18,7 +18,7 @@ struct RegisterReadCommand: Command {
         registerName = arguments.first
     }
     
-    func run(context: XemuCLI) throws(XemuError) {
+    func run(context: AppContext) throws(XemuError) {
         guard let emulator = context.emulator else {
             throw .emulatorNotSet
         }
@@ -54,7 +54,6 @@ struct RegisterReadCommand: Command {
         }
     }
     
-    @MainActor
     private func printRegister(_ register: RegularRegister) {
         Output.shared.prism {
             ForegroundColor(.blue, "$\(register.name.padding(toLength: 2, withPad: " ", startingAt: 0))")
@@ -63,7 +62,6 @@ struct RegisterReadCommand: Command {
         }
     }
     
-    @MainActor
     private func printFlagRegister(_ register: FlagRegister) {
         let values = register.flags
             .map { flag in

@@ -12,26 +12,17 @@ struct OutputSize {
     }
 }
 
-@MainActor
-var CURRENT_OUTPUT_SIZE = OutputSize()
-
-class Output {
+struct Output {
+    static let shared = Output()
     
-    @MainActor
-    static var shared = Output()
+    var currentSize = OutputSize()
     
-    @MainActor
-    func startMonitoring() {
-        signal(SIGWINCH) { _ in
-            CURRENT_OUTPUT_SIZE = Output.getOutputSize()
-        }
+    mutating func startMonitoring() {
+//        signal(SIGWINCH) { [unowned self] _ in
+//            currentSize = Output.getOutputSize()
+//        }
         
-        CURRENT_OUTPUT_SIZE = Output.getOutputSize()
-    }
-    
-    @MainActor
-    func getCurrentSize() -> OutputSize {
-        CURRENT_OUTPUT_SIZE
+        currentSize = Output.getOutputSize()
     }
     
     private static func getOutputSize() -> OutputSize {

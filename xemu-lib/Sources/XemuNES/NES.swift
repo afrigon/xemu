@@ -31,7 +31,6 @@ public class NES: Emulator, BusDelegate {
         apu.buffer
     }
 
-    @MainActor
     public init() {
         cpu = .init(bus: bus)
         apu = .init(bus: bus)
@@ -56,10 +55,10 @@ public class NES: Emulator, BusDelegate {
         ppu.bus = bus
     }
     
-    func requestNMI() {
-        cpu.state.nmiPending = true
+    func setNMI(_ value: Bool) {
+        cpu.state.nmiSignal = value
     }
-    
+
     func irqSignal() -> Bool {
         guard !cpu.registers.p.interruptDisabled else {
             return false
@@ -83,6 +82,19 @@ public class NES: Emulator, BusDelegate {
                     case 0, 1, 3, 5, 6:
                         return ppu.latch
                     case 2:
+                        if ppu.scanline == 241 {
+                            switch ppu.dot {
+                                case 1:
+                                    ppu.suppressVblank = true
+//                                case 2...3:
+//                                    cpu.state.servicing = nil
+//                                    cpu.state.nmiPending = false
+//                                    cpu.state.nmiOldPending = false
+                                default:
+                                    break
+                            }
+                        }
+                        
                         ppu.w = false
                         ppu.latch = (ppu.status & 0b1110_0000) | (ppu.latch & 0b0001_1111)
                         ppu.status &= 0b0111_1111
@@ -133,10 +145,28 @@ public class NES: Emulator, BusDelegate {
                 // for register v, t, x, w info see: https://www.nesdev.org/wiki/PPU_scrolling#Register_controls
                 switch address & 7 {
                     case 0:  // PPUCTRL
+                        let oldControl = ppu.control
                         ppu.control = data
                         
                         // set nametable index
                         ppu.t = (ppu.t & 0b111_00_11111_11111) | u16(data & 0b11) << 10
+                        
+                        // if nmi is getting enabled and vblank enabled
+                        if !Bool(oldControl & 0b1000_0000) && Bool(ppu.control & ppu.status & 0b1000_0000) {
+                            
+                            // handle a edge case where the NMI is enabled when vblank is getting cleared
+//                            if ppu.scanline == 261 && ppu.dot == 1 {
+//                                break
+//                            }
+
+                            bus.setNMI(true)
+                        }
+                        
+                        // if nmi is getting disabled, clear the pending nmi
+//                        if Bool(oldControl & 0b1000_0000) && !Bool(ppu.control & 0b1000_0000) && ppu.scanline == 241 && ppu.dot < 4 {
+//                            cpu.state.nmiPending = false
+//                            cpu.state.nmiOldPending = false
+//                        }
                     case 1:  // PPUMASK
                         ppu.mask = data
                         
@@ -247,6 +277,8 @@ public class NES: Emulator, BusDelegate {
         cycles = 0
         cpu.state.tick = 0
         cpu.state.servicing = .reset
+        
+        bus.write(0x00, at: 0x4015)
     }
     
     @inline(__always) public func clock() throws(XemuError) {

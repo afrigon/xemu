@@ -5,7 +5,7 @@ import XemuDebugger
 import XemuAsm
 
 struct DisassembleCommand: Command {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         name: "disassemble",
         description: "Dissassemble of the code at the given pointer"
     )
@@ -30,7 +30,7 @@ struct DisassembleCommand: Command {
         }
     }
     
-    func run(context: XemuCLI) throws(XemuError) {
+    func run(context: AppContext) throws(XemuError) {
         guard let emulator = context.emulator else {
             throw .emulatorNotSet
         }

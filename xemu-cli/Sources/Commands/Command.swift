@@ -2,14 +2,12 @@ import XemuFoundation
 
 protocol Command {
     
-    @MainActor
     static var configuration: CommandConfiguration { get }
     
     init()
     init(arguments: [String])
     
-    @MainActor
-    func run(context: XemuCLI) throws(XemuError)
+    func run(context: AppContext) throws(XemuError)
 }
 
 extension Command {
@@ -17,7 +15,6 @@ extension Command {
         self.init()
     }
     
-    @MainActor
     static func parse(from arguments: [String]) -> Command? {
         guard let name = arguments.first else {
             return nil

@@ -1,6 +1,5 @@
 import AVFoundation
 import XemuFoundation
-import UIKit
 
 class AudioService {
     let engine = AVAudioEngine()
@@ -62,11 +61,6 @@ class AudioService {
         guard !sampleQueue.isEmpty else {
             return 0
         }
-        
-//        print("available: \(sampleQueue.count), requested: \(frameCount)")
-//        if sampleQueue.count < frameCount {
-//            print("NOT ENOUGH SAMPLES")
-//        }
         
         let count = min(Int(frameCount), sampleQueue.count)
         let output = UnsafeMutableAudioBufferListPointer(outputData)

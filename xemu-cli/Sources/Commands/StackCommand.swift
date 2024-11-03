@@ -4,12 +4,12 @@ import XemuDebugger
 import XemuAsm
 
 struct StackCommand: Command {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         name: "stack",
         description: "Display memory around the stack pointer"
     )
     
-    func run(context: XemuCLI) throws(XemuError) {
+    func run(context: AppContext) throws(XemuError) {
         guard let emulator = context.emulator else {
             throw .emulatorNotSet
         }

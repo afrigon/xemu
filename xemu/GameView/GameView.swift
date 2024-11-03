@@ -2,6 +2,8 @@ import SwiftUI
 import XemuCore
 
 struct GameView: View {
+    @Environment(AppContext.self) var context
+    
     @State var input: NESInput = .init()
     
     let game: Game
@@ -12,15 +14,23 @@ struct GameView: View {
                 .fill(.backgroundInverse)
                 .ignoresSafeArea()
             
-            switch game.system {
-                case .nes:
-                    NESView(game: game.data, palette: .default)
-                        .ignoresSafeArea(edges: .bottom)
-#if os(tvOS)
-                        .ignoresSafeArea(edges: .top)
-#endif
-                default:
-                    Color.red
+            VStack {
+                switch game.system {
+                    case .nes:
+                        NESView(game: game.data, palette: .default)
+                            .ignoresSafeArea(edges: .bottom)
+    #if os(tvOS)
+                            .ignoresSafeArea(edges: .top)
+    #endif
+                    default:
+                        Color.red
+                }
+                
+                Button(action: {
+                    context.set(state: .menu)
+                }, label: {
+                    Text("Menu")
+                })
             }
         }
         .environment(input)

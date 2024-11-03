@@ -39,7 +39,6 @@ struct MetalView: ViewRepresentable {
             
             onDraw(view)
         }
-        
     }
     
     @Binding var isRunning: Bool

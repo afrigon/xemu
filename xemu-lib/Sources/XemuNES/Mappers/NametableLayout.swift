@@ -1,7 +1,7 @@
 import XemuFoundation
 
 /// Hard-wired nametable layout
-enum NametableLayout: Codable {
+public enum NametableLayout: Codable {
     
     /// Vertical arrangement ("mirrored horizontally") or mapper-controlled
     case vertical

@@ -64,6 +64,7 @@ class MapperMMC1: Mapper {
     var chrbank0: u8 = 0
     var chrbank1: u8 = 0
     var pgrbank: u8 = 0
+    var srambank: u8 = 0
     var sramEnabled: Bool = true
 
     init(pgrrom: Memory, chrrom: Memory, sram: Memory) {
@@ -77,7 +78,8 @@ class MapperMMC1: Mapper {
     required init(from iNes: iNesFile, saveData: Data) {
         pgrrom = .init(iNes.pgrrom)
         chrrom = .init(iNes.chrrom)
-        sram = .init(saveData)
+//        sram = .init(saveData)
+        sram = .init(.init(repeating: 0, count: 0x8000))
         vram = .init(.init(repeating: 0, count: 0x800))
         nametableLayout = iNes.nametableLayout
     }
@@ -87,7 +89,8 @@ class MapperMMC1: Mapper {
         
         switch address {
             case 0x6000..<0x8000:
-                return sram.read(at: address - 0x6000)
+                // TODO: banked read
+                return sram.bankedRead(at: address - 0x6000, bankIndex: Int(srambank), bankSize: 0x2000)
             case 0x8000..<0xC000:
                 guard !pgrrom.data.isEmpty else {
                     return nil
@@ -129,7 +132,7 @@ class MapperMMC1: Mapper {
         switch address {
             case 0x6000..<0x8000:
                 if sramEnabled {
-                    sram.write(data, at: address - 0x6000)
+                    sram.bankedWrite(data, at: address - 0x6000, bankIndex: Int(srambank), bankSize: 0x2000)
                 }
             case 0x8000...0xFFFF:
                 // bit 7 high triggers a reset
@@ -146,7 +149,7 @@ class MapperMMC1: Mapper {
                     if Bool(shift & 0b0000_0100) {
                         let value = shift >> 3
                         
-                        switch u8(address >> 13 & 0b11) {
+                        switch u8(address >> 14 & 0b11) {
                             case 0b00:
                                 control = value
                                 
@@ -159,10 +162,10 @@ class MapperMMC1: Mapper {
                                 }
                             case 0b01:
                                 chrbank0 = value
-                                pgrbank = value >> 2 & 0b11
+                                srambank = value >> 2 & 0b11
                             case 0b10:
                                 chrbank1 = value
-                                pgrbank = value >> 2 & 0b11
+                                srambank = value >> 2 & 0b11
                             case 0b11:
                                 pgrbank = value & 0b0000_1111
                                 sramEnabled = Bool(value & 0b0001_0000)
@@ -173,22 +176,22 @@ class MapperMMC1: Mapper {
                         shift = 0b1000_0000
                     }
                 }
+                
+                writeEnabled = false
             default:
                 break
         }
-        
-        writeEnabled = false
     }
     
     func ppuRead(at address: u16) -> u8? {
         switch address {
-            case 0x0000...0x0F00:
+            case 0x0000...0x0FFF:
                 if Bool(control & 0b0001_0000) {
                     chrrom.bankedRead(at: address, bankIndex: Int(chrbank0), bankSize: 0x1000)
                 } else {
                     chrrom.bankedRead(at: address, bankIndex: Int(chrbank0) & 0xFFFE, bankSize: 0x1000)
                 }
-            case 0x1000...0x1F00:
+            case 0x1000...0x1FFF:
                 if Bool(control & 0b0001_0000) {
                     chrrom.bankedRead(at: address, bankIndex: Int(chrbank1), bankSize: 0x1000)
                 } else {
@@ -203,13 +206,13 @@ class MapperMMC1: Mapper {
     
     func ppuWrite(_ data: u8, at address: u16) {
         switch address {
-            case 0x0000...0x0F00:
+            case 0x0000...0x0FFF:
                 if Bool(control & 0b0001_0000) {
                     chrrom.bankedWrite(data, at: address, bankIndex: Int(chrbank0), bankSize: 0x1000)
                 } else {
                     chrrom.bankedWrite(data, at: address, bankIndex: Int(chrbank0) & 0xFFFE, bankSize: 0x1000)
                 }
-            case 0x1000...0x1F00:
+            case 0x1000...0x1FFF:
                 if Bool(control & 0b0001_0000) {
                     chrrom.bankedWrite(data, at: address, bankIndex: Int(chrbank1), bankSize: 0x1000)
                 } else {

@@ -3,7 +3,7 @@ import XemuFoundation
 import XemuDebugger
 
 struct RegisterCommand: Command {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         name: "register",
         description: "Commands to access registers.",
         subcommands: [
@@ -12,7 +12,7 @@ struct RegisterCommand: Command {
         ]
     )
     
-    func run(context: XemuCLI) throws(XemuError) {
+    func run(context: AppContext) throws(XemuError) {
         // TODO: print some help command generated from config
         print("use: register read")
     }
