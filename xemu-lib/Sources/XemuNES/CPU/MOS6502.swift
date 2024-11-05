@@ -5,12 +5,15 @@ public class MOS6502: Codable {
     var registers = Registers()
     var state = CpuState()
     
+    var cycles = 0
+    
     weak var bus: Bus!
     
     init(bus: Bus) {
         self.bus = bus
     }
     
+    @discardableResult
     @inline(__always) func read8() -> u8 {
         defer { registers.pc &+= 1 }
         
@@ -28,7 +31,11 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) func pollInterrupts() {
-        state.nmiOldSignal = state.nmiPending
+        guard !state.oamdmaActive else {
+            return
+        }
+        
+        state.nmiOldPending = state.nmiPending
         
         if !state.nmiOldSignal && state.nmiSignal {
             state.nmiPending = true
@@ -36,14 +43,25 @@ public class MOS6502: Codable {
         
         state.nmiOldSignal = state.nmiSignal
         
+        state.irqOldPending = state.irqPending
         state.irqPending = bus.irqSignal()
+        
+        if state.tick == 0 {
+            if state.nmiOldPending {
+                state.servicing = .nmi
+            } else if state.irqOldPending {
+                state.servicing = .irq
+            }
+        }
     }
     
     public func clock() throws(XemuError) {
-        if state.servicing == .oamdma {
+        cycles += 1
+        
+        if state.oamdmaActive {
             return handleOAMDMA()
         }
-            
+
         state.tick += 1
         
         switch state.servicing {
@@ -53,13 +71,7 @@ public class MOS6502: Codable {
                 handleReset()
             default:
                 if state.tick == 1 {
-                    if state.nmiPending {
-                        state.servicing = .nmi
-                    } else if state.irqPending {
-                        state.servicing = .irq
-                    } else {
-                        state.opcode = read8()
-                    }
+                    state.opcode = read8()
                 } else {
                     switch state.opcode {
                         case 0xa5: op_a5()
@@ -323,8 +335,6 @@ public class MOS6502: Codable {
                 }
         }
         
-        pollInterrupts()
-
         state.isOddCycle.toggle()
     }
     

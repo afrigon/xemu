@@ -83,8 +83,8 @@ public struct iNesFile: RomFile {
     public let pgrromSize: u8
     public var chrromSize: u8
 
-    public let pgrrom: Data
-    public let chrrom: Data
+    public var pgrrom: Data
+    public var chrrom: Data
 
     // Flag 6
     

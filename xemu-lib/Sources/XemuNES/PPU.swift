@@ -31,7 +31,11 @@ class PPU: Codable {
     /// |          (0: read backdrop from EXT pins; 1: output color on EXT pins)
     /// +--------- Vblank NMI enable (0: off, 1: on)
     /// ```
-    var control: u8 = 0
+    var control: u8 = 0 {
+        didSet {
+            bus.setNMI(Bool(control & status & 0b1000_0000))
+        }
+    }
 
     /// PPUMASK - Rendering settings ($2001 write)
     /// PPUMASK controls the rendering of sprites and backgrounds, as well as color effects.
@@ -60,7 +64,7 @@ class PPU: Codable {
         didSet {
             spritesEnabled = Bool(self.mask & 0b0001_0000)
             backgroundEnabled = Bool(self.mask & 0b0000_1000)
-            renderingEnabled = Bool(self.mask & 0b0001_1000)
+            renderingEnabled = spritesEnabled || backgroundEnabled
         }
     }
     
@@ -147,7 +151,7 @@ class PPU: Codable {
     var readBuffer: u8 = 0
     var suppressVblank: Bool = false
     private var isOddFrame: Bool = false
-    
+
     private var needsRender = true
     private var frameBuffer: [u8] = .init(repeating: 0, count: 256 * 240)
     
@@ -425,9 +429,7 @@ class PPU: Codable {
         if renderingEnabled {
             switch dot {
                 case 0:
-                    // TODO: do fake bg access
                     break
-
                 case 1...256:
                     shiftBackgroundRegisters()
                     shiftSprites()
@@ -496,6 +498,8 @@ class PPU: Codable {
         }
         
         switch dot {
+            case 1:
+                status &= 0b0001_1111
             case 2...256:
                 fetchBackground(subcycle: (dot - 1) % 8)
             case 257:
@@ -549,11 +553,12 @@ class PPU: Codable {
             
             if scanline > 261 {
                 scanline = 0
-                isOddFrame.toggle()
                 
                 if isOddFrame && renderingEnabled {
-                    dot += 1
+                    dot = 1
                 }
+                
+                isOddFrame.toggle()
             }
         }
     }

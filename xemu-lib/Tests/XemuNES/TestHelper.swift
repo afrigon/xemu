@@ -1,6 +1,6 @@
+@testable import XemuNES
 import Foundation
 import Testing
-import XemuNES
 import XemuDebugger
 import XemuFoundation
 
@@ -36,10 +36,14 @@ class TestHelper {
     }
     
     static func testBlargg(test: String, debug: Bool = false, mock: Bool = false) throws {
-        let nes: Debuggable = if mock {
-            try loadMockSystem(with: "blargg_\(test)")
+        let nes: Debuggable
+        if mock {
+            nes = try loadMockSystem(with: "blargg_\(test)")
         } else {
-            try loadSystem(with: "blargg_\(test)")
+            let n = try loadSystem(with: "blargg_\(test)")
+//            n.ppu.clock()
+//            n.ppu.clock()
+            nes = n
         }
         
         let magic: [u8] = [0xDE, 0xB0, 0x61]

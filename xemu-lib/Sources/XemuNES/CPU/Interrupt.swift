@@ -11,16 +11,13 @@ extension MOS6502 {
         
         /// Maskable Interrupt triggered by a brk instruction or by memory mappers
         case irq = 0xFFFE
-        
-        /// Object Attribute Memory, Direct Memory Access (not an actual interrupt but is handled as one)
-        case oamdma = 0x0000
     }
     
     func handleOAMDMA() {
         state.oamdmaTick -= 1
         
         if state.oamdmaTick == 0 {
-            state.servicing = nil
+            state.oamdmaActive = false
         }
         
         switch state.oamdmaTick {
@@ -83,7 +80,6 @@ extension MOS6502 {
             case 5:
                 if state.nmiPending {
                     state.nmiPending = false
-                    state.nmiSignal = false
                     state.data = InterruptType.nmi.rawValue
                 } else {
                     state.data = InterruptType.irq.rawValue
@@ -110,13 +106,12 @@ extension MOS6502 {
     func brk() {
         switch state.tick {
             case 2:
-                _ = read8()
+                read8()
             case 3, 4:
                 handleInterrupt()
             case 5:
                 if state.nmiPending {
                     state.nmiPending = false
-                    state.nmiSignal = false
                     state.data = InterruptType.nmi.rawValue
                 } else {
                     state.data = InterruptType.irq.rawValue
@@ -124,7 +119,10 @@ extension MOS6502 {
                 
                 // the b flag is set to true even when the brk gets hijacked by an nmi
                 push(registers.p.value(b: true))
-            case 6, 7:
+            case 6:
+                handleInterrupt()
+            case 7:
+                state.nmiOldPending = false
                 handleInterrupt()
             default:
                 break

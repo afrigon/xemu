@@ -100,6 +100,7 @@ struct EmulatorIndexedRenderView: View {
             return
         }
 
+        passDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 1)
         encoder.setRenderPipelineState(pipelineState)
         encoder.setFragmentBuffer(model.palette, offset: 0, index: 0)
         encoder.setFragmentTexture(model.texture, index: 0)

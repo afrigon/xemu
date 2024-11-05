@@ -123,6 +123,7 @@ struct NESView: View {
             // TODO: do something with nes crash
             print(error)
             isRunning = false
+            context.error = error
         }
         
         if let buffer = nes.audioBuffer {

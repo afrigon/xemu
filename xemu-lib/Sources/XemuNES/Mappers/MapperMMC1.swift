@@ -149,8 +149,8 @@ class MapperMMC1: Mapper {
                     if Bool(shift & 0b0000_0100) {
                         let value = shift >> 3
                         
-                        switch u8(address >> 14 & 0b11) {
-                            case 0b00:
+                        switch address & 0xE000 {
+                            case 0x8000:
                                 control = value
                                 
                                 nametableLayout = switch value & 0b11 {
@@ -160,27 +160,27 @@ class MapperMMC1: Mapper {
                                     case 0b11: .horizontal
                                     default: .horizontal
                                 }
-                            case 0b01:
+                            case 0xA000:
                                 chrbank0 = value
                                 srambank = value >> 2 & 0b11
-                            case 0b10:
+                            case 0xC000:
                                 chrbank1 = value
                                 srambank = value >> 2 & 0b11
-                            case 0b11:
+                            case 0xE000:
                                 pgrbank = value & 0b0000_1111
                                 sramEnabled = Bool(value & 0b0001_0000)
                             default:
                                 break
                         }
-                        
+
                         shift = 0b1000_0000
                     }
                 }
-                
-                writeEnabled = false
             default:
                 break
         }
+        
+        writeEnabled = false
     }
     
     func ppuRead(at address: u16) -> u8? {
