@@ -168,7 +168,7 @@ class MapperMMC1: Mapper {
                                 srambank = value >> 2 & 0b11
                             case 0xE000:
                                 pgrbank = value & 0b0000_1111
-                                sramEnabled = Bool(value & 0b0001_0000)
+                                sramEnabled = !Bool(value & 0b0001_0000)
                             default:
                                 break
                         }

@@ -240,7 +240,7 @@ class PPU: Codable {
                     
                     // coarse_x bit 1 and coarse_y bit 1 select 2 bits from attribute byte
                     let attributeShift = (v & 0b000_00_00010_00000) >> 4 |
-                    (v & 0b000_00_00000_00010)
+                                         (v & 0b000_00_00000_00010)
                     let attributeValue = attribute >> attributeShift & 0b11
                     shiftAttribute = shiftAttribute << 2 | u16(attributeValue)
                     
@@ -417,7 +417,7 @@ class PPU: Codable {
                 
                 if !Bool(backgroundPatternValue) || !Bool(sprite.attribute & 0b0010_0000) { // priority
                     let attributeValue = u16(sprite.attribute & 0b11)
-                    frameBuffer[256 * scanline + (dot - 1)] = bus.ppuRead(at: 0x3f10 + attributeValue << 2 + u16(patternValue))
+                    frameBuffer[256 * scanline + (dot - 1)] = bus.ppuRead(at: 0x3F10 + attributeValue << 2 + u16(patternValue))
                 }
                 
                 break
