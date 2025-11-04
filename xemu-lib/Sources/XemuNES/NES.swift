@@ -263,9 +263,8 @@ public class NES: Emulator, BusDelegate {
         
         ppu.clock()
         ppu.clock()
-        
+
         apu.clock()
-        
 
         cycles &+= 1
     }

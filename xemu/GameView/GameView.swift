@@ -26,6 +26,8 @@ struct GameView: View {
                         Color.red
                 }
                 
+                NesInputView()
+                
                 Button(action: {
                     context.set(state: .menu)
                 }, label: {

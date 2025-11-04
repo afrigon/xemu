@@ -506,15 +506,14 @@ extension MOS6502 {
             case 3:
                 bus.read(at: registers.pc) // fetch and discard
                 
-                let address = i32(registers.pc) + i32(i8(bitPattern: state.lo))
+                let address = i32(registers.pc) &+ i32(i8(bitPattern: state.lo))
                 registers.pc = (registers.pc & 0xFF00) | u16(address & 0xFF)
                 
                 // if branch to same page
                 if registers.pc & 0xFF00 == address & 0xFF00 {
                     state.tick = 0
                 } else {
-                    // TODO: fix this from crashing when values are negative
-                    state.temp = u8(address >> 8)
+                    state.temp = u8(truncatingIfNeeded: address >> 8)
                 }
             case 4:
                 bus.read(at: registers.pc) // fetch and discard

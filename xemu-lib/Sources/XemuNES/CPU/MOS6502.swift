@@ -71,7 +71,6 @@ public class MOS6502: Codable {
                 handleReset()
             default:
                 if state.tick == 1 {
-//                    print(registers.pc)
                     state.opcode = read8()
                 } else {
                     switch state.opcode {

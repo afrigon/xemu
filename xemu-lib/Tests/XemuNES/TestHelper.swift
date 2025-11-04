@@ -40,10 +40,7 @@ class TestHelper {
         if mock {
             nes = try loadMockSystem(with: "blargg_\(test)")
         } else {
-            let n = try loadSystem(with: "blargg_\(test)")
-//            n.ppu.clock()
-//            n.ppu.clock()
-            nes = n
+            nes = try loadSystem(with: "blargg_\(test)")
         }
         
         let magic: [u8] = [0xDE, 0xB0, 0x61]

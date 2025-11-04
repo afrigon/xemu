@@ -1,3 +1,5 @@
+/// https://nesdev.org/apu_ref.txt
+
 import XemuFoundation
 import XKit
 
@@ -95,8 +97,13 @@ class APU: Codable {
     func read() -> u8 {
         var status: u8 = 0
         
-        // square 1
-        // square 2
+        if square1.lengthCounter.value > 0 {
+            status |= 0b0000_0001
+        }
+
+        if square2.lengthCounter.value > 0 {
+            status |= 0b0000_0010
+        }
         
         if triangle.lengthCounter.value > 0 {
             status |= 0b0000_0100
@@ -105,13 +112,14 @@ class APU: Codable {
         if noise.lengthCounter.value > 0 {
             status |= 0b0000_1000
         }
+        
         // dmc
         
         if frameInterrupt {
             status |= 0b0100_0000
         }
         
-        // dmc intterupt
+        // dmc interrupt
         
         frameInterrupt = false
         
@@ -183,13 +191,22 @@ class APU: Codable {
             case 0x400F:
                 noise.lengthCounter.load(data >> 3)
                 noise.envelope.start = true
+            case 0x4015:
+                square1.lengthCounter.enabled = Bool(data & 0b0000_0001)
+                square2.lengthCounter.enabled = Bool(data & 0b0000_0010)
+                triangle.lengthCounter.enabled = Bool(data & 0b0000_0100)
+                noise.lengthCounter.enabled = Bool(data & 0b0000_1000)
+                
+                // TODO: add something about dmc irq here
             case 0x4017:
                 disableInterrupt = Bool(data & 0b0100_0000)
                 frameSequencerMode = (data & 0b1000_0000) == 0 ? .fourStep : .fiveStep
                 frameSequencer = 0
-
-                if disableInterrupt {
-                    frameInterrupt = true
+                frameInterrupt = false
+                
+                if frameSequencerMode == .fiveStep {
+                    clockQuarterFrame()
+                    clockHalfFrame()
                 }
             default:
                 break
@@ -207,22 +224,15 @@ class APU: Codable {
                         clockHalfFrame()
                     case 22371:
                         clockQuarterFrame()
-                    case 29828:
-                        if !disableInterrupt {
-                            frameInterrupt = true
-                        }
                     case 29829:
-                        if !disableInterrupt {
-                            frameInterrupt = true
-                        }
-
                         clockQuarterFrame()
                         clockHalfFrame()
-                    case 29830:
+                        
                         if !disableInterrupt {
                             frameInterrupt = true
                         }
-
+                        
+                    case 29830:
                         frameSequencer = 0
                     default:
                         break
@@ -236,16 +246,18 @@ class APU: Codable {
                         clockHalfFrame()
                     case 22371:
                         clockQuarterFrame()
-                    case 37281:
+                    case 29829:
                         clockQuarterFrame()
                         clockHalfFrame()
+                    case 37281:
+                        clockQuarterFrame()
                     case 37282:
                         frameSequencer = 0
                     default:
                         break
                 }
         }
-
+        
         frameSequencer += 1
     }
 
@@ -269,14 +281,14 @@ class APU: Codable {
     func clock() {
         clockFrameSequencer()
 
-        triangle.clock()
-        noise.clock()
-        
         if cycles & 1 == 0 {
             square1.clock()
             square2.clock()
         }
-            
+        
+        triangle.clock()
+        noise.clock()
+
         accumulator.append(sample())
 
         if cycles >= nextSample {

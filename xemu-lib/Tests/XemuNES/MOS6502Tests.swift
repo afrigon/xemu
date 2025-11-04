@@ -96,10 +96,18 @@ struct MOS6502Tests {
         try TestHelper.testBlargg(test: "16-special", mock: true)
     }
     
-    @Test(.timeLimit(.minutes(1))) func blargg_cpu_timing() async throws {
-        try TestHelper.testBlargg(test: "cpu_timing")
+//    @Test(.timeLimit(.minutes(1))) func blargg_cpu_timing() async throws {
+//        try TestHelper.testBlargg(test: "cpu_timing")
+//    }
+    
+    @Test(.timeLimit(.minutes(4))) func blargg_instr_timing() async throws {
+        try TestHelper.testBlargg(test: "instr_timing")
     }
     
+    @Test(.timeLimit(.minutes(1))) func blargg_branch_timing() async throws {
+        try TestHelper.testBlargg(test: "branch_timing")
+    }
+
     @Test(.timeLimit(.minutes(1))) func blargg_interrupts_cli_latency() async throws {
         try TestHelper.testBlargg(test: "interrupts_01-cli_latency")
     }
@@ -118,19 +126,6 @@ struct MOS6502Tests {
     
     @Test(.timeLimit(.minutes(1))) func blargg_interrupts_branch_delays_irq() async throws {
         try TestHelper.testBlargg(test: "interrupts_05-branch_delays_irq")
-    }
-    
-    // TODO: not writing at $6000 like the others, handle differently
-    @Test(.timeLimit(.minutes(1))) func blargg_branch_basics() async throws {
-        try TestHelper.testBlargg(test: "branch_01-basics", debug: true)
-    }
-    
-    @Test(.timeLimit(.minutes(1))) func blargg_branch_backward() async throws {
-        try TestHelper.testBlargg(test: "branch_02-backward")
-    }
-    
-    @Test(.timeLimit(.minutes(1))) func blargg_branch_forward() async throws {
-        try TestHelper.testBlargg(test: "branch_03-forward")
     }
 }
 

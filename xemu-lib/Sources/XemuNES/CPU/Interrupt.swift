@@ -107,8 +107,10 @@ extension MOS6502 {
         switch state.tick {
             case 2:
                 read8()
-            case 3, 4:
-                handleInterrupt()
+            case 3:
+                push(u8(registers.pc >> 8))
+            case 4:
+                push(u8(registers.pc & 0xFF))
             case 5:
                 if state.nmiPending {
                     state.nmiPending = false
@@ -120,10 +122,13 @@ extension MOS6502 {
                 // the b flag is set to true even when the brk gets hijacked by an nmi
                 push(registers.p.value(b: true))
             case 6:
-                handleInterrupt()
+                registers.pc = (registers.pc & 0xFF00) | u16(bus.read(at: state.data))
+                registers.p.interruptDisabled = true
             case 7:
                 state.nmiOldPending = false
-                handleInterrupt()
+                registers.pc = (registers.pc & 0x00FF) | (u16(bus.read(at: state.data &+ 1)) << 8)
+                state.tick = 0
+                state.servicing = nil
             default:
                 break
         }

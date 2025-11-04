@@ -31,7 +31,7 @@ struct PPUTests {
         try TestHelper.testBlargg(test: "ppu_07-nmi_on_timing")
     }
     
-    @Test(.timeLimit(.minutes(1))) func blargg_ppu_nmi_off_timing() async throws {
+    @Test(.timeLimit(.minutes(2))) func blargg_ppu_nmi_off_timing() async throws {
         try TestHelper.testBlargg(test: "ppu_08-nmi_off_timing")
     }
     

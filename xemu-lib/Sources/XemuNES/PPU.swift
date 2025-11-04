@@ -150,7 +150,9 @@ class PPU: Codable {
     var latch: u8 = 0
     var readBuffer: u8 = 0
     var suppressVblank: Bool = false
+    
     private var isOddFrame: Bool = false
+    private var shouldSkipCycle: Bool = false
 
     private var needsRender = true
     private var frameBuffer: [u8] = .init(repeating: 0, count: 256 * 240)
@@ -496,7 +498,7 @@ class PPU: Codable {
             
             return
         }
-        
+
         switch dot {
             case 1:
                 status &= 0b0001_1111
@@ -540,6 +542,11 @@ class PPU: Codable {
             case 241:
                 vblank()
             case 261:
+                if dot == 338 {
+                    self.isOddFrame.toggle()
+                    self.shouldSkipCycle = self.isOddFrame && self.renderingEnabled
+                }
+                
                 prerender()
             default:
                 break
@@ -554,11 +561,9 @@ class PPU: Codable {
             if scanline > 261 {
                 scanline = 0
                 
-                if isOddFrame && renderingEnabled {
+                if shouldSkipCycle {
                     dot = 1
                 }
-                
-                isOddFrame.toggle()
             }
         }
     }
