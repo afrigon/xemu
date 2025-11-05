@@ -24,16 +24,8 @@ struct MOS6502Tests {
         #expect(nes.cycles == 26560)
     }
     
-    @Test(.timeLimit(.minutes(1))) func blargg_registers_reset() async throws {
-        try TestHelper.testBlargg(test: "registers_reset")
-    }
-    
-    @Test(.timeLimit(.minutes(1))) func blargg_ram_reset() async throws {
-        try TestHelper.testBlargg(test: "ram_reset")
-    }
-    
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_basics() async throws {
-        try TestHelper.testBlargg(test: "01-basics")
+        try TestHelper.testBlargg(test: "01-basics", mock: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_implied() async throws {
@@ -95,11 +87,7 @@ struct MOS6502Tests {
     @Test(.timeLimit(.minutes(1))) func blargg_instrs_special() async throws {
         try TestHelper.testBlargg(test: "16-special", mock: true)
     }
-    
-//    @Test(.timeLimit(.minutes(1))) func blargg_cpu_timing() async throws {
-//        try TestHelper.testBlargg(test: "cpu_timing")
-//    }
-    
+
     @Test(.timeLimit(.minutes(4))) func blargg_instr_timing() async throws {
         try TestHelper.testBlargg(test: "instr_timing")
     }

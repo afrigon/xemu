@@ -45,7 +45,6 @@
               "blargg_branch_basics()",
               "blargg_branch_forward()",
               "blargg_instrs_v5()",
-              "blargg_interrupts_irq_and_dma()",
               "blargg_ram_reset()"
             ]
           }

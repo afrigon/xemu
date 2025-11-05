@@ -44,14 +44,19 @@ struct NESView: View {
                 isRunning.toggle()
             }
                 
-            Text(verbatim: "\(fps)")
-                .foregroundStyle(.white)
-                .retroTextStyle(size: .header)
-                .shadow(color: .black, radius: 0.1, x: -1, y:  0)
-                .shadow(color: .black, radius: 0.1, x:  1, y:  0)
-                .shadow(color: .black, radius: 0.1, x:  0, y:  1)
-                .shadow(color: .black, radius: 0.1, x:  0, y: -1)
+            Group {
+                VStack(spacing: 8) {
+                    Text(verbatim: "\(fps)")
+                    Text(verbatim: "\(nes.ppuDebug)")
+                }
                 .padding(.m)
+            }
+            .foregroundStyle(.white)
+            .retroTextStyle(size: .header)
+            .shadow(color: .black, radius: 0.1, x: -1, y:  0)
+            .shadow(color: .black, radius: 0.1, x:  1, y:  0)
+            .shadow(color: .black, radius: 0.1, x:  0, y:  1)
+            .shadow(color: .black, radius: 0.1, x:  0, y: -1)
         }
         .onAppear {
             do throws(XemuError) {

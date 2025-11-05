@@ -19,14 +19,16 @@ struct GameView: View {
                     case .nes:
                         NESView(game: game.data, palette: .default)
                             .ignoresSafeArea(edges: .bottom)
-    #if os(tvOS)
+#if os(tvOS)
                             .ignoresSafeArea(edges: .top)
-    #endif
+#endif
                     default:
                         Color.red
                 }
                 
+#if os(iOS)
                 NesInputView()
+#endif
                 
                 Button(action: {
                     context.set(state: .menu)

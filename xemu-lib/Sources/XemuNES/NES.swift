@@ -23,6 +23,14 @@ public class NES: Emulator, BusDelegate {
     public let frameWidth = 256
     public let frameHeight = 240
     
+    public var ppuDebug: String {
+        """
+        background enabled: \(ppu.backgroundEnabled)
+        sprite: enabled \(ppu.spritesEnabled)
+        rendering: \(ppu.renderingEnabled)
+        """
+    }
+    
     public var frameBuffer: [u8]? {
         ppu.frame
     }
@@ -93,21 +101,29 @@ public class NES: Emulator, BusDelegate {
                     case 4:
                         return ppu.oam[Int(ppu.oamAddress)]
                     case 7:
-                        ppu.latch = ppu.readBuffer
-                        ppu.readBuffer = bus.ppuRead(at: ppu.v)
+                        let v = ppu.v & 0x3fff
                         
-                        if ppu.renderingEnabled && (ppu.scanline == 261 || ppu.scanline < 240) {
-                            ppu.incrementCoarseX()
-                            ppu.incrementY()
+                        if v < 0x3f00 {
+                            ppu.latch = ppu.readBuffer
+                            ppu.readBuffer = bus.ppuRead(at: v)
                         } else {
-                            if Bool(ppu.control & 0b0000_0100) {
-                                ppu.v += 32
-                            } else {
-                                ppu.v += 1
+                            var p = 0x3F00 | (v & 0x001F)
+                            
+                            if (p & 0x0013) == 0x0010 {
+                                p &= ~0x0010
                             }
                             
-                            ppu.v &= 0b0111_1111_1111_1111
+                            ppu.latch = bus.ppuRead(at: p)
+                            ppu.readBuffer = bus.ppuRead(at: (v &- 0x1000) & 0x3fff)
                         }
+                        
+                        if Bool(ppu.control & 0b0000_0100) {
+                            ppu.v += 32
+                        } else {
+                            ppu.v += 1
+                        }
+                        
+                        ppu.v &= 0b0111_1111_1111_1111
                         
                         return ppu.latch
                     default:
@@ -180,20 +196,27 @@ public class NES: Emulator, BusDelegate {
                             ppu.w = true
                         }
                     case 7:  // PPUDATA
-                        bus.ppuWrite(data, at: ppu.v) // TODO: verify if this should be done before or after inc v
+                        let v = ppu.v & 0x3FFF
                         
-                        if ppu.renderingEnabled && (ppu.scanline == 261 || ppu.scanline < 240) {
-                            ppu.incrementY()
-                            ppu.incrementCoarseX()
+                        if v < 0x3F00 {
+                            bus.ppuWrite(data, at: v)
                         } else {
-                            if Bool(ppu.control & 0b0000_0100) {
-                                ppu.v += 32
-                            } else {
-                                ppu.v += 1
+                            var p = 0x3F00 | (v & 0x001F)
+                            
+                            if (p & 0x0013) == 0x0010 {
+                                p &= ~0x0010
                             }
                             
-                            ppu.v &= 0b0111_1111_1111_1111
+                            bus.ppuWrite(data, at: p)
                         }
+                        
+                        if Bool(ppu.control & 0b0000_0100) {
+                            ppu.v += 32
+                        } else {
+                            ppu.v += 1
+                        }
+                        
+                        ppu.v &= 0b0111_1111_1111_1111
                     default:
                         break
                 }

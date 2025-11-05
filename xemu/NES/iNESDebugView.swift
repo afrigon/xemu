@@ -18,10 +18,10 @@ struct iNesDebugView: View {
             case .success(let iNes):
                 List {
                     Section(header: Text("Header")) {
-                        Text("Mapper: \(iNes.mapper)")
-                        Text("Mirroring: \(iNes.nametableLayout)")
-                        Text("Battery: \(iNes.hasBattery)")
-                        Text("Trainer: \(iNes.hasTrainer)")
+                        Text(verbatim: "Mapper: \(iNes.mapper)")
+                        Text(verbatim: "Mirroring: \(iNes.nametableLayout)")
+                        Text(verbatim: "Battery: \(iNes.hasBattery)")
+                        Text(verbatim: "Trainer: \(iNes.hasTrainer)")
                     }
                 }
             case .failure(let error):

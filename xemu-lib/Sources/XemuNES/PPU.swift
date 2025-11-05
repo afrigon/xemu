@@ -379,7 +379,7 @@ class PPU: Codable {
         let background: u8
         let backgroundPatternValue: u16
         
-        if backgroundEnabled || (dot <= 8 && Bool(mask & 0b0000_0010)) {
+        if backgroundEnabled && (dot > 8 || Bool(mask & 0b0000_0010)) {
             let patternMask: u16 = 0b1000_0000_0000_0000 >> x
             let patternShift = 15 - x
             backgroundPatternValue = (shiftPatternHI & patternMask) >> (patternShift - 1) |
@@ -395,7 +395,7 @@ class PPU: Codable {
         
         frameBuffer[256 * scanline + (dot - 1)] = background
         
-        if spritesEnabled || (dot <= 8 && Bool(mask & 0b0000_0100)) {
+        if spritesEnabled && (dot > 8 || Bool(mask & 0b0000_0100)) {
             for (i, sprite) in oamSecondary.enumerated() {
                 guard let sprite, sprite.x == 0 else {
                     continue
@@ -461,12 +461,10 @@ class PPU: Codable {
         } else {
             switch dot {
                 case 1...256:
-                    let paletteIndex: u8
-                    
-                    if v >= 0x3F00 && v <= 0x3FFF {
-                        paletteIndex = bus.ppuRead(at: v)
+                    let paletteIndex: u8 = if v >= 0x3F00 && v <= 0x3FFF {
+                        bus.ppuRead(at: v)
                     } else {
-                        paletteIndex = bus.ppuRead(at: 0x3f00)
+                        bus.ppuRead(at: 0x3f00)
                     }
                     
                     frameBuffer[256 * scanline + (dot - 1)] = paletteIndex
