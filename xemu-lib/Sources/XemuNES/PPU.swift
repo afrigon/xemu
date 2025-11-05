@@ -147,7 +147,20 @@ class PPU: Codable {
     var shiftPatternHI: u16 = 0
     var shiftAttribute: u16 = 0
 
-    var latch: u8 = 0
+    private let decayConstant: u32 = 1786830 // 20 frames
+    private let decayMask: [u8] = [
+        0b1000_0000,
+        0b0100_0000,
+        0b0010_0000,
+        0b0001_0000,
+        0b0000_1000,
+        0b0000_0100,
+        0b0000_0010,
+        0b0000_0001
+    ]
+    private var decayTimer: [u32] = [0, 0, 0, 0, 0, 0, 0, 0]
+    private(set) var latch: u8 = 0
+    
     var readBuffer: u8 = 0
     var suppressVblank: Bool = false
     
@@ -202,6 +215,16 @@ class PPU: Codable {
         } else {
             v += 0b000_00_00001_00000
         }
+    }
+    
+    func setLatch(value: u8, decayMask: u8) {
+        for i in 0..<8 {
+            if Bool(decayMask >> i & 1) {
+                decayTimer[i] = decayConstant
+            }
+        }
+        
+        latch = value
     }
     
     private func shiftBackgroundRegisters() {
@@ -528,8 +551,22 @@ class PPU: Codable {
                 break
         }
     }
+    
+    func decay() {
+        for i in 0..<8 {
+            if decayTimer[i] == 0 {
+                latch &= decayMask[i]
+            } else {
+                decayTimer[i] -= 1
+            }
+        }
+    }
 
     func clock() {
+        if latch != 0 {
+            decay()
+        }
+        
         switch scanline {
             case 0..<240:
                 render()

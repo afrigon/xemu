@@ -95,7 +95,10 @@ public class NES: Emulator, BusDelegate {
                         }
                         
                         ppu.w = false
-                        ppu.latch = (ppu.status & 0b1110_0000) | (ppu.latch & 0b0001_1111)
+                        ppu.setLatch(
+                            value: (ppu.status & 0b1110_0000) | (ppu.latch & 0b0001_1111),
+                            decayMask: 0b1110_0000
+                        )
                         ppu.status &= 0b0111_1111
                         return ppu.latch
                     case 4:
@@ -104,7 +107,7 @@ public class NES: Emulator, BusDelegate {
                         let v = ppu.v & 0x3fff
                         
                         if v < 0x3f00 {
-                            ppu.latch = ppu.readBuffer
+                            ppu.setLatch(value: ppu.readBuffer, decayMask: 0xff)
                             ppu.readBuffer = bus.ppuRead(at: v)
                         } else {
                             var p = 0x3F00 | (v & 0x001F)
@@ -113,7 +116,8 @@ public class NES: Emulator, BusDelegate {
                                 p &= ~0x0010
                             }
                             
-                            ppu.latch = bus.ppuRead(at: p)
+                            let value = ppu.latch & 0b1100_0000 | bus.ppuRead(at: p) & 0b0011_1111
+                            ppu.setLatch(value: value, decayMask: 0xff)
                             ppu.readBuffer = bus.ppuRead(at: (v &- 0x1000) & 0x3fff)
                         }
                         
@@ -147,7 +151,7 @@ public class NES: Emulator, BusDelegate {
             case 0x0000..<0x2000:
                 return wram.mirroredWrite(data, at: address)
             case 0x2000..<0x4000:
-                ppu.latch = data
+                ppu.setLatch(value: data, decayMask: 0xff)
                 
                 // for register v, t, x, w info see: https://www.nesdev.org/wiki/PPU_scrolling#Register_controls
                 switch address & 7 {
