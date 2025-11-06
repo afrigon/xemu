@@ -4,7 +4,7 @@ import XemuCore
 import XemuDebugger
 import XemuAsm
 
-public class MockSystem: Emulator, BusDelegate {
+public final class MockSystem: Emulator, BusDelegate {
     let cpu: MOS6502
     let bus: Bus = .init()
     var wram: Memory = .init(count: 0x0800)
@@ -26,7 +26,7 @@ public class MockSystem: Emulator, BusDelegate {
         nil
     }
     
-    public static let frequency = 1789773
+    public let frequency = 1789773
     public let frameWidth = 256
     public let frameHeight = 240
 

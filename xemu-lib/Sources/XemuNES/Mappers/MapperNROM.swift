@@ -1,7 +1,7 @@
 import Foundation
 import XemuFoundation
 
-class MapperNROM: Mapper {
+final class MapperNROM: Mapper {
     var type: MapperType = .nrom
     
     let pgrrom: Memory

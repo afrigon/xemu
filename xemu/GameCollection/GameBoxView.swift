@@ -31,13 +31,14 @@ struct GameBoxView: View {
                         .clipShape(RoundedRectangle(cornerRadius: .xxs))
                 } else {
                     GamePlaceholder(system: game.system)
-                        .frame(width: .xxxxxxxl, height: .xxxxxxxl)
+                        .frame(height: .xxxxxxxl)
+                        .frame(maxWidth: .xxxxxxxl)
                 }
                 
                 Text(verbatim: game.name)
                     .retroTextStyle(size: .body)
                     .foregroundStyle(.foregroundDefault)
-                    .lineLimit(4)
+                    .lineLimit(3, reservesSpace: true)
             }
         })
         .buttonStyle(.borderless)

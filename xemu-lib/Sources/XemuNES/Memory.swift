@@ -1,7 +1,7 @@
 import Foundation
 import XemuFoundation
 
-class Memory: Codable {
+final class Memory: Codable {
     var data: [u8]
     
     init(count: Int) {

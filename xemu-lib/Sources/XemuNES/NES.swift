@@ -4,12 +4,13 @@ import XemuFoundation
 import XemuDebugger
 import XemuAsm
 
-public class NES: Emulator, BusDelegate {
+public final class NES: Emulator, BusDelegate {
     var cycles: Int = 0
     
     let cpu: MOS6502
     let apu: APU
     let ppu: PPU
+    let mainClock: Clock = ClockNTSC()
     
     let bus: Bus = Bus()
     var cartridge: Cartridge? = nil
@@ -19,7 +20,9 @@ public class NES: Emulator, BusDelegate {
 
     let wram: Memory
 
-    public static let frequency = 1789773
+    public var frequency: Int {
+        mainClock.frequency
+    }
     public let frameWidth = 256
     public let frameHeight = 240
     
@@ -41,7 +44,7 @@ public class NES: Emulator, BusDelegate {
 
     public init() {
         cpu = .init(bus: bus)
-        apu = .init(bus: bus)
+        apu = .init(bus: bus, frequency: mainClock.apuFrequency)
         ppu = .init(bus: bus)
         wram = .init(.init(repeating: 0, count: 0x800))
         bus.delegate = self
@@ -102,7 +105,15 @@ public class NES: Emulator, BusDelegate {
                         ppu.status &= 0b0111_1111
                         return ppu.latch
                     case 4:
-                        return ppu.oam[Int(ppu.oamAddress)]
+                        var data = ppu.oam[Int(ppu.oamAddress)]
+                        
+                        if (ppu.oamAddress & 0x03) == 2 {
+                            data &= 0b1110_0011
+                        }
+                        
+                        ppu.setLatch(value: data, decayMask: 0xff)
+                        
+                        return data
                     case 7:
                         let v = ppu.v & 0x3fff
                         
@@ -282,18 +293,21 @@ public class NES: Emulator, BusDelegate {
     }
     
     @inline(__always) public func clock() throws(XemuError) {
-        try cpu.clock()
+        let actions = mainClock.clock()
         
-        ppu.clock()
+        if actions.shouldClockCpu {
+            try cpu.clock()
+            cpu.pollInterrupts()
+            cycles &+= 1
+        }
         
-        cpu.pollInterrupts()
+        if actions.shouldClockPpu {
+            ppu.clock()
+        }
         
-        ppu.clock()
-        ppu.clock()
-
-        apu.clock()
-
-        cycles &+= 1
+        if actions.shouldClockApu {
+            apu.clock()
+        }
     }
     
     enum CodingKeys: String, CodingKey {

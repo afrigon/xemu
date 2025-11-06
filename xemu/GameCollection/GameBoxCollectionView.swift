@@ -24,11 +24,11 @@ struct GameBoxCollectionView: View {
     
     var body: some View {
         let columns = [
-            GridItem(.adaptive(minimum: .xxxxxxl), alignment: .top)
+            GridItem(.adaptive(minimum: .xxxxxxl), spacing: .xs, alignment: .bottom)
         ]
         
         ScrollView {
-            LazyVGrid(columns: columns) {
+            LazyVGrid(columns: columns, spacing: .xs) {
                 let sortedGames = games.sorted { l, r in
                     switch gameCollectionSorting {
                         case .lastPlayed:

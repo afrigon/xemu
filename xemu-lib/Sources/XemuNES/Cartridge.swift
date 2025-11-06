@@ -1,7 +1,7 @@
 import Foundation
 import XemuFoundation
 
-class Cartridge: Codable {
+final class Cartridge: Codable {
 
     let mapper: AnyMapper
     

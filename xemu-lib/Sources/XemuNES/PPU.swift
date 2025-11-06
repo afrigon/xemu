@@ -1,7 +1,7 @@
 import Foundation
 import XemuFoundation
 
-class PPU: Codable {
+final class PPU: Codable {
     weak var bus: Bus!
     
     var dot: Int = 0
@@ -94,7 +94,7 @@ class PPU: Codable {
     /// - Outside of rendering, used as the current VRAM address.
     var v: u16 = 0 {
         didSet {
-            y = v >> 12
+            y = v >> 12 
         }
     }
     
@@ -149,14 +149,14 @@ class PPU: Codable {
 
     private let decayConstant: u32 = 1786830 // 20 frames
     private let decayMask: [u8] = [
-        0b1000_0000,
-        0b0100_0000,
-        0b0010_0000,
-        0b0001_0000,
-        0b0000_1000,
-        0b0000_0100,
-        0b0000_0010,
-        0b0000_0001
+        0b0111_1111,
+        0b1011_1111,
+        0b1101_1111,
+        0b1110_1111,
+        0b1111_0111,
+        0b1111_1011,
+        0b1111_1101,
+        0b1111_1110
     ]
     private var decayTimer: [u32] = [0, 0, 0, 0, 0, 0, 0, 0]
     private(set) var latch: u8 = 0
@@ -188,7 +188,7 @@ class PPU: Codable {
     var backgroundEnabled: Bool = false
     var renderingEnabled: Bool = false
 
-    func incrementY() {
+    @inline(__always) func incrementY() {
         if v & 0b111_00_00000_00000 == 0b111_00_00000_00000 {
             v = v & 0b000_11_11111_11111
             incrementCoarseY()
@@ -197,7 +197,7 @@ class PPU: Codable {
         }
     }
     
-    func incrementCoarseX() {
+    @inline(__always) func incrementCoarseX() {
         // if coarse X is overflowing
         if v & 0b000_00_00000_11111 == 0b000_00_00000_11111 {
             v = (v & 0b111_11_11111_00000) // coarse Y wraps around to 0
@@ -207,7 +207,7 @@ class PPU: Codable {
         }
     }
     
-    func incrementCoarseY() {
+    @inline(__always) func incrementCoarseY() {
         // if coarse Y is overflowing
         if v & 0b000_00_11111_00000 == 0b000_00_11111_00000 {
             v = (v & 0b111_11_00000_11111) // coarse Y wraps around to 0
@@ -217,22 +217,22 @@ class PPU: Codable {
         }
     }
     
-    func setLatch(value: u8, decayMask: u8) {
+    @inline(__always) func setLatch(value: u8, decayMask: u8) {
         for i in 0..<8 {
             if Bool(decayMask >> i & 1) {
-                decayTimer[i] = decayConstant
+                decayTimer[7 - i] = decayConstant
             }
         }
         
         latch = value
     }
     
-    private func shiftBackgroundRegisters() {
+    @inline(__always) private func shiftBackgroundRegisters() {
         shiftPatternLO <<= 1
         shiftPatternHI <<= 1
     }
     
-    private func shiftSprites() {
+    @inline(__always) private func shiftSprites() {
         for i in 0..<8 {
             guard var sprite = oamSecondary[i] else {
                 continue
@@ -256,7 +256,7 @@ class PPU: Codable {
         }
     }
 
-    private func fetchBackground(subcycle: Int) {
+    @inline(__always) private func fetchBackground(subcycle: Int) {
         switch subcycle {
             case 0:
                 if dot != 321 {
@@ -264,7 +264,7 @@ class PPU: Codable {
                     shiftPatternHI = shiftPatternHI | patternHI
                     
                     // coarse_x bit 1 and coarse_y bit 1 select 2 bits from attribute byte
-                    let attributeShift = (v & 0b000_00_00010_00000) >> 4 |
+                    let attributeShift = ((v & 0b000_00_00010_00000) >> 4) |
                                          (v & 0b000_00_00000_00010)
                     let attributeValue = attribute >> attributeShift & 0b11
                     shiftAttribute = shiftAttribute << 2 | u16(attributeValue)
@@ -298,14 +298,14 @@ class PPU: Codable {
         }
     }
     
-    private func resetSprites() {
+    @inline(__always) private func resetSprites() {
         for i in 0..<8 {
             oamSecondary[i] = nil
         }
     }
     
     // TODO: should this be done during background fetches
-    private func findVisibleSprites() {
+    @inline(__always) private func findVisibleSprites() {
         let spriteSize: u8 = Bool(control & 0b0010_0000) ? 16 : 8
         
         spriteZeroFound = false
@@ -342,7 +342,7 @@ class PPU: Codable {
         }
     }
     
-    private func fetchSprites(subcycle: Int) {
+    @inline(__always) private func fetchSprites(subcycle: Int) {
         switch subcycle {
             case 1, 3:
                 bus.ppuRead(at: 0x2000 | (v & 0x0FFF))
@@ -398,19 +398,20 @@ class PPU: Codable {
         }
     }
     
-    private func drawPixel() {
+    @inline(__always) private func drawPixel() {
         let background: u8
         let backgroundPatternValue: u16
         
         if backgroundEnabled && (dot > 8 || Bool(mask & 0b0000_0010)) {
             let patternMask: u16 = 0b1000_0000_0000_0000 >> x
             let patternShift = 15 - x
-            backgroundPatternValue = (shiftPatternHI & patternMask) >> (patternShift - 1) |
+            backgroundPatternValue =
+            (shiftPatternHI & patternMask) >> (patternShift - 1) |
             (shiftPatternLO & patternMask) >> patternShift
             
             let attributeValue = (shiftAttribute >> 2) & 0b11
             
-            background = bus.ppuRead(at: 0x3F00 + attributeValue << 2 + backgroundPatternValue)
+            background = bus.ppuRead(at: 0x3F00 + (attributeValue << 2) + backgroundPatternValue)
         } else {
             background = bus.ppuRead(at: 0x3F00)
             backgroundPatternValue = 0
@@ -450,7 +451,7 @@ class PPU: Codable {
         }
     }
     
-    private func render() {
+    @inline(__always) private func render() {
         if renderingEnabled {
             switch dot {
                 case 0:
@@ -497,7 +498,7 @@ class PPU: Codable {
         }
     }
     
-    private func vblank() {
+    @inline(__always) private func vblank() {
         if dot == 1 {
             if !suppressVblank {
                 status |= 0b1000_0000
@@ -511,7 +512,7 @@ class PPU: Codable {
         }
     }
     
-    private func prerender() {
+    @inline(__always) private func prerender() {
         guard renderingEnabled else {
             if dot == 1 {
                 status &= 0b0001_1111
@@ -552,7 +553,7 @@ class PPU: Codable {
         }
     }
     
-    func decay() {
+    @inline(__always) func decay() {
         for i in 0..<8 {
             if decayTimer[i] == 0 {
                 latch &= decayMask[i]

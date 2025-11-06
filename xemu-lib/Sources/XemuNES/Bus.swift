@@ -17,7 +17,7 @@ protocol BusDelegate: AnyObject {
     func bus(bus: Bus, didSendWriteStackSignalAt address: u8, _ data: u8)
 }
 
-class Bus {
+final class Bus {
     var openBus: u8 = 0x00
     var openVideoBus: u8 = 0x00
 

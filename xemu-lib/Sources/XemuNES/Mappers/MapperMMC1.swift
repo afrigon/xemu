@@ -2,7 +2,7 @@ import Foundation
 import XemuFoundation
 
 /// https://www.nesdev.org/wiki/MMC1
-class MapperMMC1: Mapper {
+final class MapperMMC1: Mapper {
     var type: MapperType = .mmc1
     
     let pgrrom: Memory

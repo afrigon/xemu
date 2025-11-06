@@ -116,7 +116,7 @@ struct NESView: View {
     }
     
     private func update(_ delta: TimeInterval) {
-        let cycles = Int((Double(1) / 60) * Double(NES.frequency))
+        let cycles = Int((Double(1) / 60) * Double(nes.frequency))
         
         nes.controller1.input = input.encode()
         

@@ -11,6 +11,7 @@ enum FrameSequencerMode: Codable {
 class APU: Codable {
     weak var bus: Bus!
     
+    private let frequency: Int
     private let sampleRate: f64
     private var cycles: u64 = 0
     private var sampleCount: u64 = 0
@@ -49,13 +50,14 @@ class APU: Codable {
     var triangle: TriangleChannel = .init()
     var noise: NoiseChannel = .init()
 
-    init(bus: Bus, sampleRate: f64 = 44100) {
+    init(bus: Bus, frequency: Int, sampleRate: f64 = 44100) {
         self.bus = bus
+        self.frequency = frequency
         self.sampleRate = sampleRate
         self.stagingBuffer = .init(repeating: 0, count: APU.bufferSize(for: sampleRate))
         self.sampleBuffer = .init(repeating: 0, count: APU.bufferSize(for: sampleRate))
         
-        nextSample = u64((f64(NES.frequency) / sampleRate))
+        nextSample = u64((f64(frequency) / sampleRate))
     }
     
     static func bufferSize(for sampleRate: Double) -> Int {
@@ -301,7 +303,7 @@ class APU: Codable {
             }
             
             sampleCount &+= 1
-            nextSample = ((sampleCount + 1) * u64(NES.frequency)) / u64(sampleRate)
+            nextSample = ((sampleCount + 1) * u64(frequency)) / u64(sampleRate)
         }
         
         cycles &+= 1
@@ -325,6 +327,7 @@ class APU: Codable {
         case cycles
         case nextSample
         case sampleCount
+        case frequency
         case sampleRate
         case accumulator
         case stagingBuffer

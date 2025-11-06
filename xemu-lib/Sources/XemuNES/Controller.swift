@@ -1,6 +1,6 @@
 import XemuFoundation
 
-public class Controller: Codable {
+public final class Controller: Codable {
     public var input: u8 = 0
     var data: u8 = 0
     var strobe: Bool = false
