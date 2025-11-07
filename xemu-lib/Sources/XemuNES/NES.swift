@@ -10,7 +10,6 @@ public final class NES: Emulator, BusDelegate {
     let cpu: MOS6502
     let apu: APU
     let ppu: PPU
-    let mainClock: Clock = ClockNTSC()
     
     let bus: Bus = Bus()
     var cartridge: Cartridge? = nil
@@ -20,21 +19,10 @@ public final class NES: Emulator, BusDelegate {
 
     let wram: Memory
 
-    public var frequency: Int {
-        mainClock.frequency
-    }
     public let frameWidth = 256
     public let frameHeight = 240
     
-    public var ppuDebug: String {
-        """
-        background enabled: \(ppu.backgroundEnabled)
-        sprite: enabled \(ppu.spritesEnabled)
-        rendering: \(ppu.renderingEnabled)
-        """
-    }
-    
-    public var frameBuffer: [u8]? {
+    public var frameBuffer: [u8] {
         ppu.frame
     }
     
@@ -44,7 +32,7 @@ public final class NES: Emulator, BusDelegate {
 
     public init() {
         cpu = .init(bus: bus)
-        apu = .init(bus: bus, frequency: mainClock.apuFrequency)
+        apu = .init(bus: bus)
         ppu = .init(bus: bus)
         wram = .init(.init(repeating: 0, count: 0x800))
         bus.delegate = self
@@ -85,73 +73,19 @@ public final class NES: Emulator, BusDelegate {
         
         let mappedData = cartridge?.cpuRead(at: address) ?? bus.openBus
         
-        switch address {
+        return switch address {
             case 0x0000..<0x2000:
-                return wram.mirroredRead(at: address)
+                wram.mirroredRead(at: address)
             case 0x2000..<0x4000:
-                switch address & 7 {
-                    case 0, 1, 3, 5, 6:
-                        return ppu.latch
-                    case 2:
-                        if ppu.scanline == 241 && ppu.dot == 1 {
-                            ppu.suppressVblank = true
-                        }
-                        
-                        ppu.w = false
-                        ppu.setLatch(
-                            value: (ppu.status & 0b1110_0000) | (ppu.latch & 0b0001_1111),
-                            decayMask: 0b1110_0000
-                        )
-                        ppu.status &= 0b0111_1111
-                        return ppu.latch
-                    case 4:
-                        var data = ppu.oam[Int(ppu.oamAddress)]
-                        
-                        if (ppu.oamAddress & 0x03) == 2 {
-                            data &= 0b1110_0011
-                        }
-                        
-                        ppu.setLatch(value: data, decayMask: 0xff)
-                        
-                        return data
-                    case 7:
-                        let v = ppu.v & 0x3fff
-                        
-                        if v < 0x3f00 {
-                            ppu.setLatch(value: ppu.readBuffer, decayMask: 0xff)
-                            ppu.readBuffer = bus.ppuRead(at: v)
-                        } else {
-                            var p = 0x3F00 | (v & 0x001F)
-                            
-                            if (p & 0x0013) == 0x0010 {
-                                p &= ~0x0010
-                            }
-                            
-                            let value = ppu.latch & 0b1100_0000 | bus.ppuRead(at: p) & 0b0011_1111
-                            ppu.setLatch(value: value, decayMask: 0xff)
-                            ppu.readBuffer = bus.ppuRead(at: (v &- 0x1000) & 0x3fff)
-                        }
-                        
-                        if Bool(ppu.control & 0b0000_0100) {
-                            ppu.v += 32
-                        } else {
-                            ppu.v += 1
-                        }
-                        
-                        ppu.v &= 0b0111_1111_1111_1111
-                        
-                        return ppu.latch
-                    default:
-                        return nil
-                }
+                ppu.read(at: address)
             case 0x4016:
-                return controller1.read()
+                controller1.read()
             case 0x4017:
-                return controller2.read()
+                controller2.read()
             case 0x6000...0xFFFF:
-                return mappedData
+                mappedData
             default:
-                return nil
+                nil
         }
     }
     
@@ -160,81 +94,9 @@ public final class NES: Emulator, BusDelegate {
         
         switch address {
             case 0x0000..<0x2000:
-                return wram.mirroredWrite(data, at: address)
+                wram.mirroredWrite(data, at: address)
             case 0x2000..<0x4000:
-                ppu.setLatch(value: data, decayMask: 0xff)
-                
-                // for register v, t, x, w info see: https://www.nesdev.org/wiki/PPU_scrolling#Register_controls
-                switch address & 7 {
-                    case 0:  // PPUCTRL
-                        ppu.control = data
-                        
-                        // set nametable index
-                        ppu.t = (ppu.t & 0b111_00_11111_11111) | u16(data & 0b11) << 10
-                    case 1:  // PPUMASK
-                        ppu.mask = data
-                        
-                    // PPUSTATUS (read-only)
-                        
-                    case 3:  // OAMADDR
-                        ppu.oamAddress = data
-                    case 4:  // OAMDATA
-                        ppu.oam[Int(ppu.oamAddress)] = data
-                        ppu.oamAddress &+= 1
-                    case 5:  // PPUSCROLL
-                        if ppu.w {                                    // second write
-                            ppu.t = (ppu.t & 0b000_11_00000_11111) |  // clear fine Y and coarse Y
-                                    u16(data & 0b1111_1000) << 2   |  // set coarse Y
-                                    u16(data & 0b111) << 12           // set fine Y
-                            
-                            ppu.w = false
-                        } else {                                      // first write
-                            ppu.t = (ppu.t & 0b111_11_11111_00000) |  // clear coarse X
-                                    u16(data >> 3)                    // set coarse X
-                            ppu.x = u16(data) & 0b111                 // set fine X
-                            
-                            ppu.w = true
-                        }
-                    case 6:  // PPUADDR
-                        if ppu.w {                                     // second write
-                            ppu.t = (ppu.t & 0b1111_1111_0000_0000) |  // clear t LO
-                                    u16(data)                          // set t LO
-                            ppu.v = ppu.t                              // set v
-                            
-                            ppu.w = false
-                            
-                            // TODO: add dummy access to v for mapper setup
-                        } else {                                       // first write
-                            ppu.t = (ppu.t & 0b0000_0000_1111_1111) |  // clear t HI
-                                    u16(data & 0b0011_1111) << 8       // set t HI with bit 6 and 7 to 0
-                            
-                            ppu.w = true
-                        }
-                    case 7:  // PPUDATA
-                        let v = ppu.v & 0x3FFF
-                        
-                        if v < 0x3F00 {
-                            bus.ppuWrite(data, at: v)
-                        } else {
-                            var p = 0x3F00 | (v & 0x001F)
-                            
-                            if (p & 0x0013) == 0x0010 {
-                                p &= ~0x0010
-                            }
-                            
-                            bus.ppuWrite(data, at: p)
-                        }
-                        
-                        if Bool(ppu.control & 0b0000_0100) {
-                            ppu.v += 32
-                        } else {
-                            ppu.v += 1
-                        }
-                        
-                        ppu.v &= 0b0111_1111_1111_1111
-                    default:
-                        break
-                }
+                ppu.write(data, at: address)
             case 0x4000...0x4013:
                 apu.write(data, at: address)
             case 0x4014:
@@ -293,21 +155,25 @@ public final class NES: Emulator, BusDelegate {
     }
     
     @inline(__always) public func clock() throws(XemuError) {
-        let actions = mainClock.clock()
+        cpu.startCycle()
+        try cpu.clock()
+        cpu.endCycle()
+
+        ppu.clock()
+        ppu.clock()
+        ppu.clock()
         
-        if actions.shouldClockCpu {
-            try cpu.clock()
-            cpu.pollInterrupts()
-            cycles &+= 1
+        apu.clock()
+    }
+    
+    public func runFrame() throws(XemuError) {
+        let frame = ppu.frameCount
+        
+        while ppu.frameCount == frame {
+            try clock()
         }
         
-        if actions.shouldClockPpu {
-            ppu.clock()
-        }
-        
-        if actions.shouldClockApu {
-            apu.clock()
-        }
+        // TODO: sync apu buffers with this
     }
     
     enum CodingKeys: String, CodingKey {

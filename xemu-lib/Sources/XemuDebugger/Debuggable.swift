@@ -2,7 +2,7 @@ import XemuCore
 import XemuFoundation
 import XemuAsm
 
-public protocol Debuggable: Emulator {
+public protocol Debuggable {
     var arch: Arch { get }
     var status: String { get }
 

@@ -6,6 +6,7 @@ public class MOS6502: Codable {
     var state = CpuState()
     
     var cycles = 0
+    var clock: Int = 0
     
     weak var bus: Bus!
     
@@ -30,11 +31,17 @@ public class MOS6502: Codable {
         return bus.readStack(at: registers.s)
     }
     
-    @inline(__always) func pollInterrupts() {
-        guard !state.oamdmaActive else {
-            return
-        }
+    @inline(__always) func startCycle(read: Bool) {
+        clock += read ? 5 : 7
+        // TODO: run ppu
+    }
+
+    @inline(__always) func endCycle(read: Bool) {
+        clock += read ? 7 : 5
+        cycles += 1
         
+        // TODO: run ppu
+
         state.nmiOldPending = state.nmiPending
         
         if !state.nmiOldSignal && state.nmiSignal {
@@ -56,8 +63,6 @@ public class MOS6502: Codable {
     }
     
     public func clock() throws(XemuError) {
-        cycles += 1
-        
         if state.oamdmaActive {
             return handleOAMDMA()
         }

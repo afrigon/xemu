@@ -76,15 +76,15 @@ extension MOS6502 {
             case 3:
                 push(u8(registers.pc >> 8))
             case 4:
-                push(u8(registers.pc & 0xFF))
-            case 5:
                 if state.nmiPending {
                     state.nmiPending = false
                     state.data = InterruptType.nmi.rawValue
                 } else {
                     state.data = InterruptType.irq.rawValue
                 }
-                
+
+                push(u8(registers.pc & 0xFF))
+            case 5:
                 push(registers.p.value(b: false))
             case 6:
                 registers.pc = (registers.pc & 0xFF00) | u16(bus.read(at: state.data))

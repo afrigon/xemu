@@ -50,7 +50,7 @@ class APU: Codable {
     var triangle: TriangleChannel = .init()
     var noise: NoiseChannel = .init()
 
-    init(bus: Bus, frequency: Int, sampleRate: f64 = 44100) {
+    init(bus: Bus, frequency: Int = 1789773, sampleRate: f64 = 44100) {
         self.bus = bus
         self.frequency = frequency
         self.sampleRate = sampleRate

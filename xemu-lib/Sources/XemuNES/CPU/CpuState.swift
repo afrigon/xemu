@@ -11,8 +11,10 @@ extension MOS6502 {
         
         // Interrupt
         var servicing: InterruptType? = nil
+        
         var irqPending: Bool = false
         var irqOldPending: Bool = false
+        
         var nmiPending: Bool = false
         var nmiOldPending: Bool = false
         var nmiSignal: Bool = false

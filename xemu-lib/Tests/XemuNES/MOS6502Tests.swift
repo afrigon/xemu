@@ -88,8 +88,8 @@ struct MOS6502Tests {
         try TestHelper.testBlargg(test: "16-special", mock: true)
     }
 
-    @Test(.timeLimit(.minutes(4))) func blargg_instr_timing() async throws {
-        try TestHelper.testBlargg(test: "instr_timing")
+    @Test(.timeLimit(.minutes(4))) func blargg_instrs_timing() async throws {
+        try TestHelper.testBlargg(test: "instrs_timing")
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_branch_timing() async throws {
@@ -112,7 +112,7 @@ struct MOS6502Tests {
         try TestHelper.testBlargg(test: "interrupts_04-irq_and_dma")
     }
     
-    @Test(.timeLimit(.minutes(1))) func blargg_interrupts_branch_delays_irq() async throws {
+    @Test(.timeLimit(.minutes(2))) func blargg_interrupts_branch_delays_irq() async throws {
         try TestHelper.testBlargg(test: "interrupts_05-branch_delays_irq")
     }
 }

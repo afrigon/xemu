@@ -504,6 +504,10 @@ extension MOS6502 {
                     state.tick = 0
                 }
             case 3:
+                if state.irqPending && !state.irqOldPending {
+                    state.irqPending = false
+                }
+                
                 bus.read(at: registers.pc) // fetch and discard
                 
                 let address = i32(registers.pc) &+ i32(i8(bitPattern: state.lo))

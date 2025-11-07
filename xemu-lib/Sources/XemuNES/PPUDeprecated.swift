@@ -1,7 +1,7 @@
 import Foundation
 import XemuFoundation
 
-final class PPU: Codable {
+final class PPU2: Codable {
     weak var bus: Bus!
     
     var dot: Int = 0

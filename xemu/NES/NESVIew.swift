@@ -47,7 +47,6 @@ struct NESView: View {
             Group {
                 VStack(spacing: 8) {
                     Text(verbatim: "\(fps)")
-                    Text(verbatim: "\(nes.ppuDebug)")
                 }
                 .padding(.m)
             }
@@ -116,14 +115,10 @@ struct NESView: View {
     }
     
     private func update(_ delta: TimeInterval) {
-        let cycles = Int((Double(1) / 60) * Double(nes.frequency))
-        
         nes.controller1.input = input.encode()
         
         do {
-            for _ in 0..<cycles {
-                try nes.clock()
-            }
+            try nes.runFrame()
         } catch let error {
             // TODO: do something with nes crash
             print(error)

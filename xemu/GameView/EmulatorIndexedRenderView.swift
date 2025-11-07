@@ -79,10 +79,6 @@ struct EmulatorIndexedRenderView: View {
     }
     
     private func draw(_ view: MTKView) {
-        guard let frame = emulator.frameBuffer else {
-            return
-        }
-        
         guard let buffer = model.commandQueue?.makeCommandBuffer(),
               let passDescriptor = view.currentRenderPassDescriptor,
               let pipelineState = model.pipelineState else {
@@ -92,7 +88,7 @@ struct EmulatorIndexedRenderView: View {
         model.texture?.replace(
             region: model.textureRegion,
             mipmapLevel: 0,
-            withBytes: frame,
+            withBytes: emulator.frameBuffer,
             bytesPerRow: emulator.frameWidth
         )
         
