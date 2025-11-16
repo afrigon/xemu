@@ -19,6 +19,10 @@ final class MapperNROM: Mapper {
         nametableLayout = iNes.nametableLayout
     }
     
+    func cpuDebugRead(at address: u16) -> u8? {
+        cpuRead(at: address)
+    }
+    
     func cpuRead(at address: u16) -> u8? {
         switch address {
             case 0x6000..<0x8000:
@@ -37,6 +41,10 @@ final class MapperNROM: Mapper {
             default:
                 break
         }
+    }
+    
+    func ppuDebugRead(at address: u16) -> u8? {
+        ppuRead(at: address)
     }
     
     func ppuRead(at address: u16) -> u8? {

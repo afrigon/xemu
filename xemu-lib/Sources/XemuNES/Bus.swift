@@ -2,19 +2,17 @@ import XemuFoundation
 
 protocol BusDelegate: AnyObject {
     func setNMI(_ value: Bool)
-    func irqSignal() -> Bool
+    func setIRQ(_ value: Bool)
+
+    func stepPPU(until cycle: Int)
+    func stepAPU()
 
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8?
+    func bus(bus: Bus, didSendDebugReadSignalAt address: u16) -> u8?
     func bus(bus: Bus, didSendWriteSignalAt address: u16, _ data: u8)
     
     func bus(bus: Bus, didSendReadVideoSignalAt address: u16) -> u8?
     func bus(bus: Bus, didSendWriteVideoSignalAt address: u16, _ data: u8)
-
-    func bus(bus: Bus, didSendReadZeroPageSignalAt address: u8) -> u8
-    func bus(bus: Bus, didSendWriteZeroPageSignalAt address: u8, _ data: u8)
-    
-    func bus(bus: Bus, didSendReadStackSignalAt address: u8) -> u8
-    func bus(bus: Bus, didSendWriteStackSignalAt address: u8, _ data: u8)
 }
 
 final class Bus {
@@ -27,8 +25,8 @@ final class Bus {
         delegate.setNMI(value)
     }
     
-    func irqSignal() -> Bool {
-        delegate.irqSignal()
+    func setIRQ(_ value: Bool) {
+        delegate.setIRQ(value)
     }
     
     @discardableResult
@@ -41,6 +39,16 @@ final class Bus {
         return data
     }
     
+    @discardableResult
+    public func debugRead(at address: u16) -> u8 {
+        guard let data = delegate.bus(bus: self, didSendDebugReadSignalAt: address) else {
+            return openBus
+        }
+        
+        openBus = data
+        return data
+    }
+
     public func write(_ data: u8, at address: u16) {
         delegate.bus(bus: self, didSendWriteSignalAt: address, data)
     }
@@ -58,22 +66,12 @@ final class Bus {
     public func ppuWrite(_ data: u8, at address: u16) {
         delegate.bus(bus: self, didSendWriteVideoSignalAt: address, data)
     }
-
-    @discardableResult
-    public func readZeroPage(at address: u8) -> u8 {
-        return delegate.bus(bus: self, didSendReadZeroPageSignalAt: address)
+    
+    public func stepPPU(until cycle: Int) {
+        delegate.stepPPU(until: cycle)
     }
     
-    public func writeZeroPage(_ data: u8, at address: u8) {
-        delegate.bus(bus: self, didSendWriteZeroPageSignalAt: address, data)
-    }
-    
-    @discardableResult
-    public func readStack(at address: u8) -> u8 {
-        return delegate.bus(bus: self, didSendReadStackSignalAt: address)
-    }
-    
-    public func writeStack(_ data: u8, at address: u8) {
-        delegate.bus(bus: self, didSendWriteStackSignalAt: address, data)
+    public func stepAPU() {
+        delegate.stepAPU()
     }
 }

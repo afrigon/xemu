@@ -11,9 +11,11 @@ protocol Mapper: Codable {
 
     init(from iNes: iNesFile, saveData: Data)
     
+    func cpuDebugRead(at address: u16) -> u8?
     func cpuRead(at address: u16) -> u8?
     func cpuWrite(_ data: u8, at address: u16)
     
+    func ppuDebugRead(at address: u16) -> u8?
     func ppuRead(at address: u16) -> u8?
     func ppuWrite(_ data: u8, at address: u16)
 }

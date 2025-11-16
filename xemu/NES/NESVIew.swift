@@ -118,7 +118,7 @@ struct NESView: View {
         nes.controller1.input = input.encode()
         
         do {
-            try nes.runFrame()
+            try nes.stepFrame()
         } catch let error {
             // TODO: do something with nes crash
             print(error)

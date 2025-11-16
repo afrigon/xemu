@@ -19,144 +19,81 @@ extension MOS6502 {
     /// Jump
     /// Sets the program counter to the address specified by the operand
     func jmpAbsolute() {
-        switch state.tick {
-            case 2:
-                state.lo = read8()
-            case 3:
-                state.hi = read8()
-                registers.pc = state.data
-                state.tick = 0
-            default:
-                break
-        }
+        registers.pc = read16()
     }
     
     /// Jump
     /// Sets the program counter to the address specified by the operand
     func jmpIndirect() {
-        switch state.tick {
-            case 2:
-                state.lo = read8()
-            case 3:
-                state.hi = read8()
-            case 4:
-                state.temp = bus.read(at: state.data)
-            case 5:
-                let address = (state.data & 0xFF00) | ((state.data &+ 1) & 0x00FF)
-                state.hi = bus.read(at: address)
-                state.lo = state.temp
-                registers.pc = state.data
-                state.tick = 0
-            default:
-                break
+        let ptr = read16()
+        
+        var address: u16
+        
+        if (ptr & 0xff) == 0xff {
+            let lo = read8(at: ptr)
+            let hi = read8(at: ptr - 0xff)
+            address = u16(hi: hi, lo: lo)
+        } else {
+            address = read16(at: ptr)
         }
+        
+        registers.pc = address
     }
     
     /// Jump to Subroutine
     /// The JSR instruction pushes the address (minus one) of the return point
     /// on to the stack and then sets the program counter to the target memory address
     func jsr() {
-        switch state.tick {
-        case 2:
-            state.lo = read8()
-        case 3:
-            break // Internal Operation
-        case 4:
-            push(u8(registers.pc >> 8))   // pch
-        case 5:
-            push(u8(registers.pc & 0xFF)) // pcl
-        case 6:
-            state.hi = read8()
-            registers.pc = state.data
-            state.tick = 0
-        default:
-            break
-        }
+        let lo = read8()
+        peek8()
+        push16(registers.pc)
+        let hi = read8()
+        
+        let address = u16(hi: hi, lo: lo)
+        registers.pc = address
     }
     
     /// Return from Subroutine
     /// The RTS instruction is used at the end of a subroutine to return to the
     /// calling routine. It pulls the program counter (minus one) from the stack
     func rts() {
-        switch state.tick {
-            case 2:
-                bus.read(at: registers.pc)
-            case 3:
-                break
-            case 4:
-                state.lo = pop()
-            case 5:
-                state.hi = pop()
-                registers.pc = state.data
-            case 6:
-                registers.pc &+= 1
-                state.tick = 0
-            default:
-                break
-        }
+        peek8()
+        let address = pop16()
+        peek8()
+        registers.pc = address + 1
     }
 
     /// Push Accumulator
     /// Pushes a copy of the accumulator on to the stack
     func pha() {
-        switch state.tick {
-            case 2:
-                bus.read(at: registers.pc)
-            case 3:
-                push(registers.a)
-                state.tick = 0
-            default:
-                break
-        }
+        peek8()
+        push8(registers.a)
     }
     
     /// Push Processor Status
     /// Pushes a copy of the status flags on to the stack
     func php() {
-        switch state.tick {
-            case 2:
-                bus.read(at: registers.pc)
-            case 3:
-                push(registers.p.value(b: true))
-                state.tick = 0
-            default:
-                break
-        }
+        peek8()
+        push8(registers.p.value(b: true))
     }
     
     /// Pull Accumulator
     /// Pulls an 8 bit value from the stack and into the accumulator.
     /// The zero and negative flags are set as appropriate
     func pla() {
-        switch state.tick {
-            case 2:
-                bus.read(at: registers.pc)
-            case 3:
-                break
-            case 4:
-                registers.a = pop()
-                registers.p.setNZ(registers.a)
-                state.tick = 0
-            default:
-                break
-        }
+        peek8()
+        peek8()
+        registers.a = pop8()
+        registers.p.setNZ(registers.a)
     }
     
     /// Pull Processor Status
     /// Pulls an 8 bit value from the stack and into the processor flags.
     /// The flags will take on new states as determined by the value pulled
     func plp() {
-        switch state.tick {
-            case 2:
-                bus.read(at: registers.pc)
-            case 3:
-                break
-            case 4:
-                registers.p.set(pop())
-                state.tick = 0
-            default:
-                break
-        }
+        peek8()
+        peek8()
+        registers.p.set(pop8())
     }
     
     /// Clear Carry Flag
@@ -485,46 +422,36 @@ extension MOS6502 {
     /// if the condition is met then add the relative displacement to the
     /// program counter to cause a branch to a new location
     func branch() {
-        switch state.tick {
-            case 2:
-                state.lo = read8()
-                
-                let flagValue = Bool(state.opcode & 0b0010_0000)
-                let flagIndex = (state.opcode & 0b1100_0000) >> 6
-                
-                let shouldBranch = switch flagIndex {
-                    case 0b00: flagValue == registers.p.negative
-                    case 0b01: flagValue == registers.p.overflow
-                    case 0b10: flagValue == registers.p.carry
-                    case 0b11: flagValue == registers.p.zero
-                    default: false
-                }
-                
-                if !shouldBranch {
-                    state.tick = 0
-                }
-            case 3:
-                if state.irqPending && !state.irqOldPending {
-                    state.irqPending = false
-                }
-                
-                bus.read(at: registers.pc) // fetch and discard
-                
-                let address = i32(registers.pc) &+ i32(i8(bitPattern: state.lo))
-                registers.pc = (registers.pc & 0xFF00) | u16(address & 0xFF)
-                
-                // if branch to same page
-                if registers.pc & 0xFF00 == address & 0xFF00 {
-                    state.tick = 0
-                } else {
-                    state.temp = u8(truncatingIfNeeded: address >> 8)
-                }
-            case 4:
-                bus.read(at: registers.pc) // fetch and discard
-                
-                registers.pc = registers.pc & 0xFF | u16(state.temp) << 8
-                state.tick = 0
-            default: break
+        let lo = read8()
+        
+        let flagValue = Bool(state.opcode & 0b0010_0000)
+        let flagIndex = (state.opcode & 0b1100_0000) >> 6
+        
+        let shouldBranch = switch flagIndex {
+            case 0b00: flagValue == registers.p.negative
+            case 0b01: flagValue == registers.p.overflow
+            case 0b10: flagValue == registers.p.carry
+            case 0b11: flagValue == registers.p.zero
+            default: false
+        }
+        
+        if shouldBranch {
+            if state.irqPending && !state.irqOldPending {
+                state.irqPending = false
+            }
+            
+            peek8()
+            let crossedPage = isCrossingPage(a: registers.pc, b: i8(bitPattern: lo))
+            let address = i32(registers.pc) &+ i32(i8(bitPattern: lo))
+            registers.pc = (registers.pc & 0xFF00) | u16(address & 0xFF)
+            
+            if crossedPage {
+                peek8()
+                registers.pc = u16(
+                    hi: u8(truncatingIfNeeded: address >> 8),
+                    lo: u8(registers.pc & 0xFF)
+                )
+            }
         }
     }
 }

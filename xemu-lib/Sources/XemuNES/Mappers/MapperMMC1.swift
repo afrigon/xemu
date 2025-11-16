@@ -84,12 +84,19 @@ final class MapperMMC1: Mapper {
         nametableLayout = iNes.nametableLayout
     }
     
+    func cpuDebugRead(at address: u16) -> u8? {
+        let oldWriteEnabled = writeEnabled
+        let value = cpuRead(at: address)
+        writeEnabled = oldWriteEnabled
+        
+        return value
+    }
+    
     func cpuRead(at address: u16) -> u8? {
         writeEnabled = true
         
         switch address {
             case 0x6000..<0x8000:
-                // TODO: banked read
                 return sram.bankedRead(at: address - 0x6000, bankIndex: Int(srambank), bankSize: 0x2000)
             case 0x8000..<0xC000:
                 guard !pgrrom.data.isEmpty else {
@@ -181,6 +188,10 @@ final class MapperMMC1: Mapper {
         }
         
         writeEnabled = false
+    }
+    
+    func ppuDebugRead(at address: u16) -> u8? {
+        ppuRead(at: address)
     }
     
     func ppuRead(at address: u16) -> u8? {

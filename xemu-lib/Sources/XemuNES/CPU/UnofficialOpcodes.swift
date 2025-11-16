@@ -1,11 +1,6 @@
 import XemuFoundation
 
 extension MOS6502 {
-    func ahx() -> u8 {
-        state.hi = registers.a & registers.x & (state.hi &+ 1)
-        return state.hi
-    }
-    
     func alr(_ value: u8) {
         and(value)
         registers.a = lsr(registers.a)
@@ -73,16 +68,56 @@ extension MOS6502 {
         registers.a & registers.x
     }
     
-    func shx() -> u8 {
-        state.hi = registers.x & (state.hi &+ 1)
-        return state.hi
+    func SyaSxaAxa(_ address: u16, _ index: u8, _ value: u8) {
+        let crossedPage = isCrossingPage(a: address, b: index)
+        
+        let operand = address + u16(index)
+        
+        var hi = u8(operand >> 8)
+        let lo = u8(operand & 0xff)
+        
+        if crossedPage {
+            hi &= value
+        }
+        
+        let value = value & (u8(address >> 8) &+ 1)
+        
+        write8(value, at: u16(hi: hi, lo: lo))
     }
     
-    func shy() -> u8 {
-        state.hi = registers.y & (state.hi &+ 1)
-        return state.hi
+    func shaa() {
+        SyaSxaAxa(read16(), registers.y, registers.x & registers.a)
     }
     
+    func shaz() {
+        let pageZeroAddress = read8()
+        
+        var address: u16
+        
+        if pageZeroAddress == 0xff {
+            let lo = read8(at: 0xff)
+            let hi = read8(at: 0x00)
+            address = u16(hi: hi, lo: lo)
+        } else {
+            address = read16(at: u16(pageZeroAddress))
+        }
+        
+        SyaSxaAxa(address, registers.y, registers.x & registers.a)
+    }
+
+    func shx() {
+        SyaSxaAxa(read16(), registers.y, registers.x)
+    }
+    
+    func shy() {
+        SyaSxaAxa(read16(), registers.x, registers.y)
+    }
+
+    func tas() {
+        shaa()
+        registers.s = registers.x & registers.a
+    }
+
     func slo(_ value: u8) -> u8 {
         let result = asl(value)
         ora(result)
@@ -95,12 +130,6 @@ extension MOS6502 {
         eor(result)
         
         return result
-    }
-
-    func tas() -> u8 {
-        registers.s = registers.a & registers.x
-        state.hi = registers.s & (state.hi &+ 1) // ?
-        return state.hi
     }
 
     /// Highly unstable, do not use

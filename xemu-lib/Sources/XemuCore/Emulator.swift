@@ -10,9 +10,11 @@ public protocol Emulator: Codable {
     var audioBuffer: [f32]? { get }
 
     func load(program: Data, saveData: Data?) throws(XemuError)
+    
+    func powerCycle()
     func reset()
-    func clock() throws(XemuError)
-    func runFrame() throws(XemuError)
+    
+    func stepFrame() throws(XemuError)
 }
 
 extension Emulator {

@@ -18,7 +18,7 @@ class TestHelper {
         let data = try Data(contentsOf: url)
         
         try nes.load(program: data)
-        nes.reset()
+        nes.powerCycle()
         
         return nes
     }
@@ -30,7 +30,7 @@ class TestHelper {
         let data = try Data(contentsOf: url)
         
         try nes.load(program: data)
-        nes.reset()
+        nes.powerCycle()
         
         return nes
     }
@@ -46,6 +46,10 @@ class TestHelper {
         let magic: [u8] = [0xDE, 0xB0, 0x61]
         var status: u8? = nil
         
+        if debug {
+            print(nes.status)
+        }
+
         while status == 0x80 || status == 0x81 || status == nil {
 //            if status == 0x81 {
 //                print("resetting")

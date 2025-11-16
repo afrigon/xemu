@@ -7,10 +7,10 @@ struct MOS6502Tests {
         // the nestest rom has been modified, the reset vector points to 0xC000
         let nes = try TestHelper.loadMockSystem(with: "nestest")
         
+        print(nes.status)
+        
         while true {
-            repeat {
-                try nes.clock()
-            } while nes.cpu.state.tick != 0
+            try nes.stepi()
             
             if nes.cpu.registers.s > 0xFD {
                 break
@@ -89,7 +89,7 @@ struct MOS6502Tests {
     }
 
     @Test(.timeLimit(.minutes(4))) func blargg_instrs_timing() async throws {
-        try TestHelper.testBlargg(test: "instrs_timing")
+        try TestHelper.testBlargg(test: "instrs_timing", debug: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_branch_timing() async throws {

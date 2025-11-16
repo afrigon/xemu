@@ -1,6 +1,7 @@
 /// https://nesdev.org/apu_ref.txt
 
 import XemuFoundation
+import XemuCore
 import XKit
 
 enum FrameSequencerMode: Codable {
@@ -60,6 +61,11 @@ class APU: Codable {
         nextSample = u64((f64(frequency) / sampleRate))
     }
     
+    func reset(type: ResetType) {
+        // TODO: implement this properly
+        bus.write(0x00, at: 0x4015)
+    }
+    
     static func bufferSize(for sampleRate: Double) -> Int {
         let sampleCount = Int(sampleRate / 60) // samples per frame
         
@@ -95,6 +101,34 @@ class APU: Codable {
     func tndIndex(t: u8, n: u8, d: u8) -> Int {
         Int(d) * 16 * 16 + Int(n) * 16 + Int(t)
     }
+    
+    func debugRead() -> u8 {
+        var status: u8 = 0
+        
+        if square1.lengthCounter.value > 0 {
+            status |= 0b0000_0001
+        }
+
+        if square2.lengthCounter.value > 0 {
+            status |= 0b0000_0010
+        }
+        
+        if triangle.lengthCounter.value > 0 {
+            status |= 0b0000_0100
+        }
+        
+        if noise.lengthCounter.value > 0 {
+            status |= 0b0000_1000
+        }
+        
+        // dmc
+        
+        if frameInterrupt {
+            status |= 0b0100_0000
+        }
+        
+        return status
+    }
 
     func read() -> u8 {
         var status: u8 = 0
@@ -124,6 +158,7 @@ class APU: Codable {
         // dmc interrupt
         
         frameInterrupt = false
+        bus.setIRQ(false)
         
         return status
     }
@@ -205,6 +240,7 @@ class APU: Codable {
                 frameSequencerMode = (data & 0b1000_0000) == 0 ? .fourStep : .fiveStep
                 frameSequencer = 0
                 frameInterrupt = false
+                bus.setIRQ(false)
                 
                 if frameSequencerMode == .fiveStep {
                     clockQuarterFrame()
@@ -232,6 +268,7 @@ class APU: Codable {
                         
                         if !disableInterrupt {
                             frameInterrupt = true
+                            bus.setIRQ(true)
                         }
                         
                     case 29830:
@@ -280,7 +317,7 @@ class APU: Codable {
         noise.envelope.clock()
     }
 
-    func clock() {
+    func step() {
         clockFrameSequencer()
 
         if cycles & 1 == 0 {

@@ -1,6 +1,20 @@
 import XemuFoundation
 
 extension MOS6502 {
+    
+    // 7  bit  0
+    // ---- ----
+    // NV1B DIZC
+    // |||| ||||
+    // |||| |||+- Carry
+    // |||| ||+-- Zero
+    // |||| |+--- Interrupt Disable
+    // |||| +---- Decimal
+    // |||+------ (No CPU effect; see: the B flag)
+    // ||+------- (No CPU effect; always pushed as 1)
+    // |+-------- Overflow
+    // +--------- Negative
+    
     struct Flags: Codable {
         var carry: Bool
         var zero: Bool
@@ -8,19 +22,6 @@ extension MOS6502 {
         var decimal: Bool
         var overflow: Bool
         var negative: Bool
-        
-        // 7  bit  0
-        // ---- ----
-        // NV1B DIZC
-        // |||| ||||
-        // |||| |||+- Carry
-        // |||| ||+-- Zero
-        // |||| |+--- Interrupt Disable
-        // |||| +---- Decimal
-        // |||+------ (No CPU effect; see: the B flag)
-        // ||+------- (No CPU effect; always pushed as 1)
-        // |+-------- Overflow
-        // +--------- Negative
         
         static let CARRY_MASK: u8                  = 0b0000_0001
         static let ZERO_MASK: u8                   = 0b0000_0010

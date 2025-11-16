@@ -5,6 +5,10 @@ public final class Controller: Codable {
     var data: u8 = 0
     var strobe: Bool = false
     
+    func debugRead() -> u8 {
+        data & 1
+    }
+    
     func read() -> u8 {
         if strobe {
             self.data = input

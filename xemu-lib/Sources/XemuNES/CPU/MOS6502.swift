@@ -1,46 +1,139 @@
 import XemuDebugger
 import XemuFoundation
+import XemuCore
 
 public class MOS6502: Codable {
     var registers = Registers()
     var state = CpuState()
     
     var cycles = 0
-    var clock: Int = 0
+    var clock = 0
+    let ppuOffset = 1
     
     weak var bus: Bus!
+    
+    private lazy var handlers: [() throws(XemuError) -> Void] = {
+        [
+            op_00, op_01, op_02, op_03, op_04, op_05, op_06, op_07, op_08, op_09, op_0a, op_0b, op_0c, op_0d, op_0e, op_0f,
+            op_10, op_11, op_12, op_13, op_14, op_15, op_16, op_17, op_18, op_19, op_1a, op_1b, op_1c, op_1d, op_1e, op_1f,
+            op_20, op_21, op_22, op_23, op_24, op_25, op_26, op_27, op_28, op_29, op_2a, op_2b, op_2c, op_2d, op_2e, op_2f,
+            op_30, op_31, op_32, op_33, op_34, op_35, op_36, op_37, op_38, op_39, op_3a, op_3b, op_3c, op_3d, op_3e, op_3f,
+            op_40, op_41, op_42, op_43, op_44, op_45, op_46, op_47, op_48, op_49, op_4a, op_4b, op_4c, op_4d, op_4e, op_4f,
+            op_50, op_51, op_52, op_53, op_54, op_55, op_56, op_57, op_58, op_59, op_5a, op_5b, op_5c, op_5d, op_5e, op_5f,
+            op_60, op_61, op_62, op_63, op_64, op_65, op_66, op_67, op_68, op_69, op_6a, op_6b, op_6c, op_6d, op_6e, op_6f,
+            op_70, op_71, op_72, op_73, op_74, op_75, op_76, op_77, op_78, op_79, op_7a, op_7b, op_7c, op_7d, op_7e, op_7f,
+            op_80, op_81, op_82, op_83, op_84, op_85, op_86, op_87, op_88, op_89, op_8a, op_8b, op_8c, op_8d, op_8e, op_8f,
+            op_90, op_91, op_92, op_93, op_94, op_95, op_96, op_97, op_98, op_99, op_9a, op_9b, op_9c, op_9d, op_9e, op_9f,
+            op_a0, op_a1, op_a2, op_a3, op_a4, op_a5, op_a6, op_a7, op_a8, op_a9, op_aa, op_ab, op_ac, op_ad, op_ae, op_af,
+            op_b0, op_b1, op_b2, op_b3, op_b4, op_b5, op_b6, op_b7, op_b8, op_b9, op_ba, op_bb, op_bc, op_bd, op_be, op_bf,
+            op_c0, op_c1, op_c2, op_c3, op_c4, op_c5, op_c6, op_c7, op_c8, op_c9, op_ca, op_cb, op_cc, op_cd, op_ce, op_cf,
+            op_d0, op_d1, op_d2, op_d3, op_d4, op_d5, op_d6, op_d7, op_d8, op_d9, op_da, op_db, op_dc, op_dd, op_de, op_df,
+            op_e0, op_e1, op_e2, op_e3, op_e4, op_e5, op_e6, op_e7, op_e8, op_e9, op_ea, op_eb, op_ec, op_ed, op_ee, op_ef,
+            op_f0, op_f1, op_f2, op_f3, op_f4, op_f5, op_f6, op_f7, op_f8, op_f9, op_fa, op_fb, op_fc, op_fd, op_fe, op_ff
+        ]
+    }()
     
     init(bus: Bus) {
         self.bus = bus
     }
     
+    @inline(__always) func push8(_ value: u8) {
+        startCycle(read: false)
+        
+        bus.write(value, at: u16(registers.s) + 0x100)
+        registers.s &-= 1
+        
+        endCycle(read: false)
+    }
+    
+    @inline(__always) func push16(_ value: u16) {
+        push8(u8(value >> 8))
+        push8(u8(value & 0xff))
+    }
+
+    @inline(__always) func pop8() -> u8 {
+        startCycle(read: true)
+        
+        registers.s &+= 1
+        let value = bus.read(at: u16(registers.s) + 0x100)
+        
+        endCycle(read: true)
+        
+        return value
+    }
+    
+    @inline(__always) func pop16() -> u16 {
+        let lo = pop8()
+        let hi = pop8()
+
+        return u16(hi: hi, lo: lo)
+    }
+    
     @discardableResult
+    @inline(__always) func peek8() -> u8 {
+        return read8(at: registers.pc)
+    }
+
     @inline(__always) func read8() -> u8 {
         defer { registers.pc &+= 1 }
         
-        return bus.read(at: registers.pc)
+        return read8(at: registers.pc)
+    }
+
+    @inline(__always) func read16() -> u16 {
+        defer { registers.pc &+= 2 }
+        
+        return read16(at: registers.pc)
+    }
+
+    @discardableResult
+    @inline(__always) func read8(at address: u16) -> u8 {
+        // TODO: dma
+        
+        startCycle(read: true)
+        
+        let value = bus.read(at: address)
+        
+        endCycle(read: true)
+        
+        return value
     }
     
-    @inline(__always) func push(_ value: u8) {
-        bus.writeStack(value, at: registers.s)
-        registers.s &-= 1
+    @inline(__always) func read16(at address: u16) -> u16 {
+        let lo = read8(at: address)
+        let hi = read8(at: address &+ 1)
+        
+        return u16(hi: hi, lo: lo)
     }
     
-    @inline(__always) func pop() -> u8 {
-        registers.s &+= 1
-        return bus.readStack(at: registers.s)
+    @inline(__always) func write8(_ data: u8, at address: u16) {
+        startCycle(read: false)
+        
+        bus.write(data, at: address)
+        
+        endCycle(read: false)
     }
     
+    @inline(__always) func isCrossingPage(a: u16, b: u8) -> Bool {
+        (a &+ u16(b)) & 0xff00 != a & 0xff00
+    }
+    
+    @inline(__always) func isCrossingPage(a: u16, b: i8) -> Bool {
+        (i32(a) &+ i32(b)) & 0xff00 != i32(a) & 0xff00
+    }
+
     @inline(__always) func startCycle(read: Bool) {
         clock += read ? 5 : 7
-        // TODO: run ppu
+        
+        bus.stepPPU(until: clock - ppuOffset)
+        bus.stepAPU()
     }
 
     @inline(__always) func endCycle(read: Bool) {
         clock += read ? 7 : 5
         cycles += 1
         
-        // TODO: run ppu
+        bus.stepPPU(until: clock - ppuOffset)
 
         state.nmiOldPending = state.nmiPending
         
@@ -51,296 +144,47 @@ public class MOS6502: Codable {
         state.nmiOldSignal = state.nmiSignal
         
         state.irqOldPending = state.irqPending
-        state.irqPending = bus.irqSignal()
+        state.irqPending = state.irqSignal && !registers.p.interruptDisabled
+    }
+    
+    public func reset(type: ResetType) {
+        state.nmiSignal = false
+        state.irqSignal = false
         
-        if state.tick == 0 {
-            if state.nmiOldPending {
-                state.servicing = .nmi
-            } else if state.irqOldPending {
-                state.servicing = .irq
-            }
+        let lo = bus.read(at: InterruptType.reset.rawValue)
+        let hi = bus.read(at: InterruptType.reset.rawValue + 1)
+        registers.pc = u16(hi: hi, lo: lo)
+        
+        switch type {
+            case .powerCycle:
+                registers.a = 0
+                registers.x = 0
+                registers.y = 0
+                registers.s = 0xfd
+                registers.p = .init()
+                
+                state.irqPending = false
+            case .reset:
+                registers.p.interruptDisabled = true
+                registers.s &-= 3
+        }
+        
+        cycles = -1
+        clock = 12
+        
+        for _ in 0..<8 {
+            startCycle(read: true)
+            endCycle(read: true)
         }
     }
     
-    public func clock() throws(XemuError) {
-        if state.oamdmaActive {
-            return handleOAMDMA()
-        }
-
-        state.tick += 1
+    public func stepi() throws(XemuError) {
+        state.opcode = read8()
+        try handlers[Int(state.opcode)]()
         
-        switch state.servicing {
-            case .some(.irq), .some(.nmi):
-                handleInterrupt()
-            case .some(.reset):
-                handleReset()
-            default:
-                if state.tick == 1 {
-                    state.opcode = read8()
-                } else {
-                    switch state.opcode {
-                        case 0xa5: op_a5()
-                        case 0xd0: op_d0()
-                        case 0x4c: op_4c()
-                        case 0xe8: op_e8()
-                        case 0x10: op_10()
-                        case 0xc9: op_c9()
-                        case 0x30: op_30()
-                        case 0xf0: op_f0()
-                        case 0x24: op_24()
-                        case 0x85: op_85()
-                        case 0x88: op_88()
-                        case 0xc8: op_c8()
-                        case 0xa8: op_a8()
-                        case 0xe6: op_e6()
-                        case 0xb0: op_b0()
-                        case 0xbd: op_bd()
-                        case 0xb5: op_b5()
-                        case 0xad: op_ad()
-                        case 0x20: op_20()
-                        case 0x4a: op_4a()
-                        case 0x60: op_60()
-                        case 0xb1: op_b1()
-                        case 0x29: op_29()
-                        case 0x9d: op_9d()
-                        case 0x8d: op_8d()
-                        case 0x18: op_18()
-                        case 0xa9: op_a9()
-                        case 0x00: op_00()
-                        case 0x01: op_01()
-                        case 0x02: try op_02()
-                        case 0x03: op_03()
-                        case 0x04: op_04()
-                        case 0x05: op_05()
-                        case 0x06: op_06()
-                        case 0x07: op_07()
-                        case 0x08: op_08()
-                        case 0x09: op_09()
-                        case 0x0a: op_0a()
-                        case 0x0b: op_0b()
-                        case 0x0c: op_0c()
-                        case 0x0d: op_0d()
-                        case 0x0e: op_0e()
-                        case 0x0f: op_0f()
-                        case 0x11: op_11()
-                        case 0x12: try op_12()
-                        case 0x13: op_13()
-                        case 0x14: op_14()
-                        case 0x15: op_15()
-                        case 0x16: op_16()
-                        case 0x17: op_17()
-                        case 0x19: op_19()
-                        case 0x1a: op_1a()
-                        case 0x1b: op_1b()
-                        case 0x1c: op_1c()
-                        case 0x1d: op_1d()
-                        case 0x1e: op_1e()
-                        case 0x1f: op_1f()
-                        case 0x21: op_21()
-                        case 0x22: try op_22()
-                        case 0x23: op_23()
-                        case 0x25: op_25()
-                        case 0x26: op_26()
-                        case 0x27: op_27()
-                        case 0x28: op_28()
-                        case 0x2a: op_2a()
-                        case 0x2b: op_2b()
-                        case 0x2c: op_2c()
-                        case 0x2d: op_2d()
-                        case 0x2e: op_2e()
-                        case 0x2f: op_2f()
-                        case 0x31: op_31()
-                        case 0x32: try op_32()
-                        case 0x33: op_33()
-                        case 0x34: op_34()
-                        case 0x35: op_35()
-                        case 0x36: op_36()
-                        case 0x37: op_37()
-                        case 0x38: op_38()
-                        case 0x39: op_39()
-                        case 0x3a: op_3a()
-                        case 0x3b: op_3b()
-                        case 0x3c: op_3c()
-                        case 0x3d: op_3d()
-                        case 0x3e: op_3e()
-                        case 0x3f: op_3f()
-                        case 0x40: op_40()
-                        case 0x41: op_41()
-                        case 0x42: try op_42()
-                        case 0x43: op_43()
-                        case 0x44: op_44()
-                        case 0x45: op_45()
-                        case 0x46: op_46()
-                        case 0x47: op_47()
-                        case 0x48: op_48()
-                        case 0x49: op_49()
-                        case 0x4b: op_4b()
-                        case 0x4d: op_4d()
-                        case 0x4e: op_4e()
-                        case 0x4f: op_4f()
-                        case 0x50: op_50()
-                        case 0x51: op_51()
-                        case 0x52: try op_52()
-                        case 0x53: op_53()
-                        case 0x54: op_54()
-                        case 0x55: op_55()
-                        case 0x56: op_56()
-                        case 0x57: op_57()
-                        case 0x58: op_58()
-                        case 0x59: op_59()
-                        case 0x5a: op_5a()
-                        case 0x5b: op_5b()
-                        case 0x5c: op_5c()
-                        case 0x5d: op_5d()
-                        case 0x5e: op_5e()
-                        case 0x5f: op_5f()
-                        case 0x61: op_61()
-                        case 0x62: try op_62()
-                        case 0x63: op_63()
-                        case 0x64: op_64()
-                        case 0x65: op_65()
-                        case 0x66: op_66()
-                        case 0x67: op_67()
-                        case 0x68: op_68()
-                        case 0x69: op_69()
-                        case 0x6a: op_6a()
-                        case 0x6b: op_6b()
-                        case 0x6c: op_6c()
-                        case 0x6d: op_6d()
-                        case 0x6e: op_6e()
-                        case 0x6f: op_6f()
-                        case 0x70: op_70()
-                        case 0x71: op_71()
-                        case 0x72: try op_72()
-                        case 0x73: op_73()
-                        case 0x74: op_74()
-                        case 0x75: op_75()
-                        case 0x76: op_76()
-                        case 0x77: op_77()
-                        case 0x78: op_78()
-                        case 0x79: op_79()
-                        case 0x7a: op_7a()
-                        case 0x7b: op_7b()
-                        case 0x7c: op_7c()
-                        case 0x7d: op_7d()
-                        case 0x7e: op_7e()
-                        case 0x7f: op_7f()
-                        case 0x80: op_80()
-                        case 0x81: op_81()
-                        case 0x82: op_82()
-                        case 0x83: op_83()
-                        case 0x84: op_84()
-                        case 0x86: op_86()
-                        case 0x87: op_87()
-                        case 0x89: op_89()
-                        case 0x8a: op_8a()
-                        case 0x8b: op_8b()
-                        case 0x8c: op_8c()
-                        case 0x8e: op_8e()
-                        case 0x8f: op_8f()
-                        case 0x90: op_90()
-                        case 0x91: op_91()
-                        case 0x92: try op_92()
-                        case 0x93: op_93()
-                        case 0x94: op_94()
-                        case 0x95: op_95()
-                        case 0x96: op_96()
-                        case 0x97: op_97()
-                        case 0x98: op_98()
-                        case 0x99: op_99()
-                        case 0x9a: op_9a()
-                        case 0x9b: op_9b()
-                        case 0x9c: op_9c()
-                        case 0x9e: op_9e()
-                        case 0x9f: op_9f()
-                        case 0xa0: op_a0()
-                        case 0xa1: op_a1()
-                        case 0xa2: op_a2()
-                        case 0xa3: op_a3()
-                        case 0xa4: op_a4()
-                        case 0xa6: op_a6()
-                        case 0xa7: op_a7()
-                        case 0xaa: op_aa()
-                        case 0xab: op_ab()
-                        case 0xac: op_ac()
-                        case 0xae: op_ae()
-                        case 0xaf: op_af()
-                        case 0xb2: try op_b2()
-                        case 0xb3: op_b3()
-                        case 0xb4: op_b4()
-                        case 0xb6: op_b6()
-                        case 0xb7: op_b7()
-                        case 0xb8: op_b8()
-                        case 0xb9: op_b9()
-                        case 0xba: op_ba()
-                        case 0xbb: op_bb()
-                        case 0xbc: op_bc()
-                        case 0xbe: op_be()
-                        case 0xbf: op_bf()
-                        case 0xc0: op_c0()
-                        case 0xc1: op_c1()
-                        case 0xc2: op_c2()
-                        case 0xc3: op_c3()
-                        case 0xc4: op_c4()
-                        case 0xc5: op_c5()
-                        case 0xc6: op_c6()
-                        case 0xc7: op_c7()
-                        case 0xca: op_ca()
-                        case 0xcb: op_cb()
-                        case 0xcc: op_cc()
-                        case 0xcd: op_cd()
-                        case 0xce: op_ce()
-                        case 0xcf: op_cf()
-                        case 0xd1: op_d1()
-                        case 0xd2: try op_d2()
-                        case 0xd3: op_d3()
-                        case 0xd4: op_d4()
-                        case 0xd5: op_d5()
-                        case 0xd6: op_d6()
-                        case 0xd7: op_d7()
-                        case 0xd8: op_d8()
-                        case 0xd9: op_d9()
-                        case 0xda: op_da()
-                        case 0xdb: op_db()
-                        case 0xdc: op_dc()
-                        case 0xdd: op_dd()
-                        case 0xde: op_de()
-                        case 0xdf: op_df()
-                        case 0xe0: op_e0()
-                        case 0xe1: op_e1()
-                        case 0xe2: op_e2()
-                        case 0xe3: op_e3()
-                        case 0xe4: op_e4()
-                        case 0xe5: op_e5()
-                        case 0xe7: op_e7()
-                        case 0xe9: op_e9()
-                        case 0xea: op_ea()
-                        case 0xeb: op_eb()
-                        case 0xec: op_ec()
-                        case 0xed: op_ed()
-                        case 0xee: op_ee()
-                        case 0xef: op_ef()
-                        case 0xf1: op_f1()
-                        case 0xf2: try op_f2()
-                        case 0xf3: op_f3()
-                        case 0xf4: op_f4()
-                        case 0xf5: op_f5()
-                        case 0xf6: op_f6()
-                        case 0xf7: op_f7()
-                        case 0xf8: op_f8()
-                        case 0xf9: op_f9()
-                        case 0xfa: op_fa()
-                        case 0xfb: op_fb()
-                        case 0xfc: op_fc()
-                        case 0xfd: op_fd()
-                        case 0xfe: op_fe()
-                        case 0xff: op_ff()
-                        default: break
-                    }
-                }
+        if state.irqOldPending || state.nmiOldPending {
+            handleInterrupt()
         }
-        
-        state.isOddCycle.toggle()
     }
     
     @inline(__always) private func op_a5() {
@@ -424,7 +268,7 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_60() {
-        rts()
+        handleImplied(rts)
     }
     
     @inline(__always) private func op_b1() {
@@ -684,7 +528,7 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_40() {
-        rti()
+        handleImplied(rti)
     }
     
     @inline(__always) private func op_41() {
@@ -993,7 +837,7 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_93() {
-        handleIndirectIndexedYWrite(ahx)
+        shaz()
     }
     
     @inline(__always) private func op_94() {
@@ -1025,19 +869,19 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_9b() {
-        handleAbsoluteIndexedYWrite(tas)
+        tas()
     }
     
     @inline(__always) private func op_9c() {
-        handleAbsoluteIndexedXWrite(shy)
+        shy()
     }
     
     @inline(__always) private func op_9e() {
-        handleAbsoluteIndexedYWrite(shx)
+        shx()
     }
     
     @inline(__always) private func op_9f() {
-        handleAbsoluteIndexedYWrite(ahx)
+        shaa()
     }
     
     @inline(__always) private func op_a0() {

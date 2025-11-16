@@ -6,7 +6,6 @@ public protocol Debuggable {
     var arch: Arch { get }
     var status: String { get }
 
-    func clock() throws(XemuError)
     func stepi() throws(XemuError)
     
     func getRegisters() -> [RegisterInfo]

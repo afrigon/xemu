@@ -14,6 +14,10 @@ final class Cartridge: Codable {
         mapper = AnyMapper(from: iNes, saveData: saveData ?? .init(repeating: 0, count: 0x2000))
     }
     
+    func cpuDebugRead(at address: u16) -> u8? {
+        mapper.mapper.cpuDebugRead(at: address)
+    }
+    
     func cpuRead(at address: u16) -> u8? {
         mapper.mapper.cpuRead(at: address)
     }
@@ -22,6 +26,10 @@ final class Cartridge: Codable {
         mapper.mapper.cpuWrite(data, at: address)
     }
     
+    func ppuDebugRead(at address: u16) -> u8? {
+        mapper.mapper.ppuDebugRead(at: address)
+    }
+
     func ppuRead(at address: u16) -> u8? {
         mapper.mapper.ppuRead(at: address)
     }

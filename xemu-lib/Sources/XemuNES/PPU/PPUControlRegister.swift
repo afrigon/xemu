@@ -1,3 +1,5 @@
+import XemuFoundation
+
 // 7  bit  0
 // ---- ----
 // VPHB SINN
@@ -16,4 +18,7 @@
 
 struct PPUControlRegister: Codable {
     var nmiOnVBlank: Bool = false
+    var verticalIncrement: u16 = 1
+    var spritePatternAddress: u16 = 0x0000
+    var backgroundPatternAddress: u16 = 0x0000
 }

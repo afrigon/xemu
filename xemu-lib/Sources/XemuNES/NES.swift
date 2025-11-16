@@ -5,8 +5,6 @@ import XemuDebugger
 import XemuAsm
 
 public final class NES: Emulator, BusDelegate {
-    var cycles: Int = 0
-    
     let cpu: MOS6502
     let apu: APU
     let ppu: PPU
@@ -29,6 +27,10 @@ public final class NES: Emulator, BusDelegate {
     public var audioBuffer: [f32]? {
         apu.buffer
     }
+    
+    public var cycles: Int {
+        cpu.cycles
+    }
 
     public init() {
         cpu = .init(bus: bus)
@@ -37,7 +39,7 @@ public final class NES: Emulator, BusDelegate {
         wram = .init(.init(repeating: 0, count: 0x800))
         bus.delegate = self
         
-        reset()
+        powerCycle()
     }
     
     required public init(from decoder: any Decoder) throws {
@@ -58,12 +60,8 @@ public final class NES: Emulator, BusDelegate {
         cpu.state.nmiSignal = value
     }
 
-    func irqSignal() -> Bool {
-        guard !cpu.registers.p.interruptDisabled else {
-            return false
-        }
-        
-        return apu.frameInterrupt
+    func setIRQ(_ value: Bool) {
+        cpu.state.irqSignal = value
     }
     
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {
@@ -89,6 +87,29 @@ public final class NES: Emulator, BusDelegate {
         }
     }
     
+    func bus(bus: Bus, didSendDebugReadSignalAt address: u16) -> u8? {
+        if address == 0x4015 {
+            return apu.debugRead()
+        }
+        
+        let mappedData = cartridge?.cpuDebugRead(at: address) ?? bus.openBus
+        
+        return switch address {
+            case 0x0000..<0x2000:
+                wram.mirroredRead(at: address)
+            case 0x2000..<0x4000:
+                ppu.debugRead(at: address)
+            case 0x4016:
+                controller1.debugRead()
+            case 0x4017:
+                controller2.debugRead()
+            case 0x6000...0xFFFF:
+                mappedData
+            default:
+                nil
+        }
+    }
+    
     func bus(bus: Bus, didSendWriteSignalAt address: u16, _ data: u8) {
         cartridge?.cpuWrite(data, at: address)
         
@@ -104,9 +125,9 @@ public final class NES: Emulator, BusDelegate {
                 cpu.state.oamdmaPage = u16(data) << 8
                 cpu.state.oamdmaTick = 513
                 
-                if cpu.state.isOddCycle {
-                    cpu.state.oamdmaTick += 1
-                }
+//                if cpu.state.isOddCycle {
+//                    cpu.state.oamdmaTick += 1
+//                }
             case 0x4016:
                 controller1.write(data)
                 controller2.write(data)
@@ -118,64 +139,54 @@ public final class NES: Emulator, BusDelegate {
     }
     
     func bus(bus: Bus, didSendReadVideoSignalAt address: u16) -> u8? {
-        cartridge?.ppuRead(at: address)
+        ppu.busAddress = address
+        return cartridge?.ppuRead(at: address)
     }
     
     func bus(bus: Bus, didSendWriteVideoSignalAt address: u16, _ data: u8) {
+        ppu.busAddress = address
         cartridge?.ppuWrite(data, at: address)
     }
     
-    func bus(bus: Bus, didSendReadZeroPageSignalAt address: u8) -> u8 {
-        wram.data[Int(address)]
-    }
-    
-    func bus(bus: Bus, didSendWriteZeroPageSignalAt address: u8, _ data: u8) {
-        wram.data[Int(address)] = data
-    }
-    
-    func bus(bus: Bus, didSendReadStackSignalAt address: u8) -> u8 {
-        wram.data[Int(address) + 0x100]
-    }
-    
-    func bus(bus: Bus, didSendWriteStackSignalAt address: u8, _ data: u8) {
-        wram.data[Int(address) + 0x100] = data
-    }
-
     public func load(program: Data, saveData: Data? = nil) throws(XemuError) {
         let iNes = try iNesFile(program)
         cartridge = Cartridge(from: iNes, saveData: saveData)
     }
     
+    public func powerCycle() {
+        cpu.reset(type: .powerCycle)
+        ppu.reset(type: .powerCycle)
+        apu.reset(type: .powerCycle)
+    }
+    
     public func reset() {
-        cycles = 0
-        cpu.state.tick = 0
-        cpu.state.servicing = .reset
-        
-        bus.write(0x00, at: 0x4015)
+        cpu.reset(type: .reset)
+        ppu.reset(type: .reset)
+        apu.reset(type: .reset)
     }
     
-    @inline(__always) public func clock() throws(XemuError) {
-        cpu.startCycle()
-        try cpu.clock()
-        cpu.endCycle()
-
-        ppu.clock()
-        ppu.clock()
-        ppu.clock()
-        
-        apu.clock()
+    @inline(__always) public func stepi() throws(XemuError) {
+        try cpu.stepi()
     }
     
-    public func runFrame() throws(XemuError) {
+    public func stepFrame() throws(XemuError) {
         let frame = ppu.frameCount
         
         while ppu.frameCount == frame {
-            try clock()
+            try stepi()
         }
         
         // TODO: sync apu buffers with this
     }
     
+    public func stepPPU(until cycle: Int) {
+        ppu.step(until: cycle)
+    }
+    
+    public func stepAPU() {
+        apu.step()
+    }
+
     enum CodingKeys: String, CodingKey {
         case cpu
         case ppu
@@ -203,7 +214,7 @@ extension NES: Debuggable {
             return 0 // TODO: maybe throw out of bound exception
         }
         
-        return bus.read(at: u16(address))
+        return bus.debugRead(at: u16(address))
     }
     
     public func setMemory(_ data: u8, at address: Int) {
@@ -214,22 +225,12 @@ extension NES: Debuggable {
         bus.write(data, at: u16(address))
     }
 
-    public func stepi() throws(XemuError) {
-        // run the first cycle
-        try clock()
-        
-        // finish the instruction
-        while cpu.state.tick >= 1 {
-            try clock()
-        }
-    }
-    
     public var status: String {
         let pc = cpu.registers.pc
         let data = [
-            bus.read(at: pc),
-            bus.read(at: pc &+ 1),
-            bus.read(at: pc &+ 2)
+            bus.debugRead(at: pc),
+            bus.debugRead(at: pc &+ 1),
+            bus.debugRead(at: pc &+ 2)
         ]
         let disassembler = XemuAsm.MOS6502.Disassembler(data: Data(data))
         
@@ -255,16 +256,16 @@ extension NES: Debuggable {
                 case .relative(let value):
                     disasm = disasm.dropLast(4) + (Int(pc) + Int(value) + 2).hex(toLength: 4, textCase: .uppercase)
                 case .zeroPage(let value):
-                    let data = bus.read(at: u16(value))
+                    let data = bus.debugRead(at: u16(value))
                     disasm += " = \(data.hex(toLength: 2, textCase: .uppercase))"
                 case .zeroPageX(let value):
                     let address = value &+ cpu.registers.x
-                    let data = bus.read(at: u16(address))
+                    let data = bus.debugRead(at: u16(address))
                     disasm += " @ \(address.hex(toLength: 2, textCase: .uppercase))"
                     disasm += " = \(data.hex(toLength: 2, textCase: .uppercase))"
                 case .zeroPageY(let value):
                     let address = value &+ cpu.registers.y
-                    let data = bus.read(at: u16(address))
+                    let data = bus.debugRead(at: u16(address))
                     disasm += " @ \(address.hex(toLength: 2, textCase: .uppercase))"
                     disasm += " = \(data.hex(toLength: 2, textCase: .uppercase))"
                 case .absolute(let value):
@@ -272,41 +273,41 @@ extension NES: Debuggable {
                         case .jmp, .jsr:
                             break
                         default:
-                            let data = bus.read(at: value)
+                            let data = bus.debugRead(at: value)
                             disasm += " = \(data.hex(toLength: 2, textCase: .uppercase))"
                     }
                 case .absoluteX(let value):
                     let address = value &+ u16(cpu.registers.x)
-                    let data = bus.read(at: address)
+                    let data = bus.debugRead(at: address)
                     disasm += " @ \(address.hex(toLength: 4, textCase: .uppercase))"
                     disasm += " = \(data.hex(toLength: 2, textCase: .uppercase))"
                 case .absoluteY(let value):
                     let address = value &+ u16(cpu.registers.y)
-                    let data = bus.read(at: address)
+                    let data = bus.debugRead(at: address)
                     disasm += " @ \(address.hex(toLength: 4, textCase: .uppercase))"
                     disasm += " = \(data.hex(toLength: 2, textCase: .uppercase))"
                 case .indirect(let value):
                     let addressHI = value & 0xFF00
                     let addressLO = u8(value & 0x00FF)
-                    let lo = bus.read(at: value)
-                    let hi = bus.read(at: addressHI | u16(addressLO &+ 1))
+                    let lo = bus.debugRead(at: value)
+                    let hi = bus.debugRead(at: addressHI | u16(addressLO &+ 1))
                     let address = u16(hi) << 8 | u16(lo)
                     disasm += " = \(address.hex(toLength: 4, textCase: .uppercase))"
                 case .indexedIndirect(let value):
                     let offset = value &+ cpu.registers.x
-                    let lo = bus.read(at: u16(offset))
-                    let hi = bus.read(at: u16(offset &+ 1))
+                    let lo = bus.debugRead(at: u16(offset))
+                    let hi = bus.debugRead(at: u16(offset &+ 1))
                     let address = u16(hi) << 8 | u16(lo)
-                    let data = bus.read(at: address)
+                    let data = bus.debugRead(at: address)
                     disasm += " @ \(offset.hex(toLength: 2, textCase: .uppercase))"
                     disasm += " = \(address.hex(toLength: 4, textCase: .uppercase))"
                     disasm += " = \(data.hex(toLength: 2, textCase: .uppercase))"
                 case .indirectIndexed(let value):
-                    let lo = bus.read(at: u16(value))
-                    let hi = bus.read(at: u16(value &+ 1))
+                    let lo = bus.debugRead(at: u16(value))
+                    let hi = bus.debugRead(at: u16(value &+ 1))
                     let address = u16(hi) << 8 | u16(lo)
                     let effectiveAddress = address &+ u16(cpu.registers.y)
-                    let data = bus.read(at: effectiveAddress)
+                    let data = bus.debugRead(at: effectiveAddress)
                     disasm += " = \(address.hex(toLength: 4, textCase: .uppercase))"
                     disasm += " @ \(effectiveAddress.hex(toLength: 4, textCase: .uppercase))"
                     disasm += " = \(data.hex(toLength: 2, textCase: .uppercase))"
