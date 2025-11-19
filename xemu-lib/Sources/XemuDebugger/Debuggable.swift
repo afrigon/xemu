@@ -5,6 +5,7 @@ import XemuAsm
 public protocol Debuggable {
     var arch: Arch { get }
     var status: String { get }
+    var cycles: u64 { get }
 
     func stepi() throws(XemuError)
     

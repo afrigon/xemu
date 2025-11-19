@@ -17,8 +17,10 @@ import XemuFoundation
 // +--------- Vblank NMI enable (0: off, 1: on)
 
 struct PPUControlRegister: Codable {
-    var nmiOnVBlank: Bool = false
     var verticalIncrement: u16 = 1
     var spritePatternAddress: u16 = 0x0000
     var backgroundPatternAddress: u16 = 0x0000
+    var largeSprites: Bool = false
+    var secondaryPPU: Bool = false
+    var nmiOnVBlank: Bool = false
 }

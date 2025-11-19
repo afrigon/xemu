@@ -10,7 +10,7 @@ public final class MockSystem: BusDelegate {
     var wram: Memory = .init(count: 0x0800)
     var cartridge: Cartridge? = nil
     
-    var cycles: Int {
+    public var cycles: u64 {
         cpu.cycles
     }
     
@@ -36,6 +36,10 @@ public final class MockSystem: BusDelegate {
     
     func setIRQ(_ value: Bool) {
         cpu.state.irqSignal = value
+    }
+    
+    func getDmcReadAddress() -> u16 {
+        0
     }
 
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {

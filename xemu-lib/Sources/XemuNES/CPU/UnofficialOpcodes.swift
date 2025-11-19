@@ -71,6 +71,11 @@ extension MOS6502 {
     func SyaSxaAxa(_ address: u16, _ index: u8, _ value: u8) {
         let crossedPage = isCrossingPage(a: address, b: index)
         
+        let cycle = cycles
+        read8(at: address &+ u16(index) &- (crossedPage ? 0x100 : 0))
+        
+        let dma = cycles - cycle > 1
+        
         let operand = address + u16(index)
         
         var hi = u8(operand >> 8)
@@ -80,7 +85,7 @@ extension MOS6502 {
             hi &= value
         }
         
-        let value = value & (u8(address >> 8) &+ 1)
+        let value = dma ? value : value & (u8(address >> 8) &+ 1)
         
         write8(value, at: u16(hi: hi, lo: lo))
     }

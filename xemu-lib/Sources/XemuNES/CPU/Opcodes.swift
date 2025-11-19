@@ -421,37 +421,23 @@ extension MOS6502 {
     /// Branch (BCC, BCS, BEQ, BMI, BNE, BPL, BVC, BVS)
     /// if the condition is met then add the relative displacement to the
     /// program counter to cause a branch to a new location
-    func branch() {
-        let lo = read8()
+    func branch(shouldBranch: Bool) {
+        let offset = i8(bitPattern: read8())
         
-        let flagValue = Bool(state.opcode & 0b0010_0000)
-        let flagIndex = (state.opcode & 0b1100_0000) >> 6
-        
-        let shouldBranch = switch flagIndex {
-            case 0b00: flagValue == registers.p.negative
-            case 0b01: flagValue == registers.p.overflow
-            case 0b10: flagValue == registers.p.carry
-            case 0b11: flagValue == registers.p.zero
-            default: false
+        guard shouldBranch else {
+            return
         }
         
-        if shouldBranch {
-            if state.irqPending && !state.irqOldPending {
-                state.irqPending = false
-            }
-            
+        if state.irqPending && !state.irqOldPending {
+            state.irqPending = false
+        }
+        
+        peek8()
+        
+        if isCrossingPage(a: registers.pc, b: offset) {
             peek8()
-            let crossedPage = isCrossingPage(a: registers.pc, b: i8(bitPattern: lo))
-            let address = i32(registers.pc) &+ i32(i8(bitPattern: lo))
-            registers.pc = (registers.pc & 0xFF00) | u16(address & 0xFF)
-            
-            if crossedPage {
-                peek8()
-                registers.pc = u16(
-                    hi: u8(truncatingIfNeeded: address >> 8),
-                    lo: u8(registers.pc & 0xFF)
-                )
-            }
         }
+        
+        registers.pc = u16(truncatingIfNeeded: i32(registers.pc) + i32(offset))
     }
 }

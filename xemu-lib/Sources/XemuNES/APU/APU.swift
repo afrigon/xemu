@@ -50,6 +50,7 @@ class APU: Codable {
     var square2: SquareChannel = .init(.square2)
     var triangle: TriangleChannel = .init()
     var noise: NoiseChannel = .init()
+    var dmc: DeltaModulationChannel = .init()
 
     init(bus: Bus, frequency: Int = 1789773, sampleRate: f64 = 44100) {
         self.bus = bus
@@ -229,12 +230,15 @@ class APU: Codable {
                 noise.lengthCounter.load(data >> 3)
                 noise.envelope.start = true
             case 0x4015:
+                // TODO: run ?
+                
+                bus.setIRQ(false)
+                
                 square1.lengthCounter.enabled = Bool(data & 0b0000_0001)
                 square2.lengthCounter.enabled = Bool(data & 0b0000_0010)
                 triangle.lengthCounter.enabled = Bool(data & 0b0000_0100)
                 noise.lengthCounter.enabled = Bool(data & 0b0000_1000)
-                
-                // TODO: add something about dmc irq here
+//                dmc.lengthCounter.enabled = Bool(data & 0b0001_0000)
             case 0x4017:
                 disableInterrupt = Bool(data & 0b0100_0000)
                 frameSequencerMode = (data & 0b1000_0000) == 0 ? .fourStep : .fiveStep

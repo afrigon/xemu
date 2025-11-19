@@ -28,7 +28,7 @@ public final class NES: Emulator, BusDelegate {
         apu.buffer
     }
     
-    public var cycles: Int {
+    public var cycles: u64 {
         cpu.cycles
     }
 
@@ -62,6 +62,10 @@ public final class NES: Emulator, BusDelegate {
 
     func setIRQ(_ value: Bool) {
         cpu.state.irqSignal = value
+    }
+    
+    func getDmcReadAddress() -> u16 {
+        apu.dmc.address
     }
     
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {
@@ -121,13 +125,7 @@ public final class NES: Emulator, BusDelegate {
             case 0x4000...0x4013:
                 apu.write(data, at: address)
             case 0x4014:
-                cpu.state.oamdmaActive = true
-                cpu.state.oamdmaPage = u16(data) << 8
-                cpu.state.oamdmaTick = 513
-                
-//                if cpu.state.isOddCycle {
-//                    cpu.state.oamdmaTick += 1
-//                }
+                cpu.oamDma(data)
             case 0x4016:
                 controller1.write(data)
                 controller2.write(data)

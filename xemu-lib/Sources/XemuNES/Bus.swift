@@ -6,6 +6,8 @@ protocol BusDelegate: AnyObject {
 
     func stepPPU(until cycle: Int)
     func stepAPU()
+    
+    func getDmcReadAddress() -> u16
 
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8?
     func bus(bus: Bus, didSendDebugReadSignalAt address: u16) -> u8?
@@ -73,5 +75,9 @@ final class Bus {
     
     public func stepAPU() {
         delegate.stepAPU()
+    }
+    
+    public func getDmcReadAddress() -> u16 {
+        delegate.getDmcReadAddress()
     }
 }

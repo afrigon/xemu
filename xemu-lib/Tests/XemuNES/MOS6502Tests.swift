@@ -89,15 +89,15 @@ struct MOS6502Tests {
     }
 
     @Test(.timeLimit(.minutes(4))) func blargg_instrs_timing() async throws {
-        try TestHelper.testBlargg(test: "instrs_timing", debug: true)
+        try TestHelper.testBlargg(test: "instrs_timing")
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_branch_timing() async throws {
         try TestHelper.testBlargg(test: "branch_timing")
     }
 
-    @Test(.timeLimit(.minutes(1))) func blargg_interrupts_cli_latency() async throws {
-        try TestHelper.testBlargg(test: "interrupts_01-cli_latency")
+    @Test(.timeLimit(.minutes(10))) func blargg_interrupts_cli_latency() async throws {
+        try TestHelper.testBlargg(test: "interrupts_01-cli_latency", debug: true)
     }
     
     @Test(.timeLimit(.minutes(1))) func blargg_interrupts_nmi_and_brk() async throws {

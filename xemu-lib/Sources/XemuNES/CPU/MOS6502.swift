@@ -6,7 +6,7 @@ public class MOS6502: Codable {
     var registers = Registers()
     var state = CpuState()
     
-    var cycles = 0
+    var cycles: u64 = 0
     var clock = 0
     let ppuOffset = 1
     
@@ -88,7 +88,7 @@ public class MOS6502: Codable {
 
     @discardableResult
     @inline(__always) func read8(at address: u16) -> u8 {
-        // TODO: dma
+        handleDma(address)
         
         startCycle(read: true)
         
@@ -121,17 +121,41 @@ public class MOS6502: Codable {
     @inline(__always) func isCrossingPage(a: u16, b: i8) -> Bool {
         (i32(a) &+ i32(b)) & 0xff00 != i32(a) & 0xff00
     }
+    
+    @inline(__always) func oamDma(_ value: u8) {
+        state.oamDmaActive = true
+        state.oamDmaOffset = value
+        state.needsDmaHalt = true
+    }
+    
+    @inline(__always) func dmcDma() {
+        state.dmcDmaActive = true
+        state.needsDmaHalt = true
+        state.needsDmaDummyRead = true
+    }
+    
+    @inline(__always) func stopDmcDma() {
+        if state.dmcDmaActive {
+            if state.needsDmaHalt {
+                state.dmcDmaActive = false
+                state.needsDmaHalt = false
+                state.needsDmaDummyRead = false
+            } else {
+                state.dmcDmaAbort = true
+            }
+        }
+    }
 
     @inline(__always) func startCycle(read: Bool) {
         clock += read ? 5 : 7
-        
+        cycles &+= 1
+
         bus.stepPPU(until: clock - ppuOffset)
         bus.stepAPU()
     }
 
     @inline(__always) func endCycle(read: Bool) {
         clock += read ? 7 : 5
-        cycles += 1
         
         bus.stepPPU(until: clock - ppuOffset)
 
@@ -151,6 +175,13 @@ public class MOS6502: Codable {
         state.nmiSignal = false
         state.irqSignal = false
         
+        state.oamDmaActive = false
+        state.oamDmaOffset = 0
+        
+        state.dmcDmaActive = false
+        state.dmcDmaAbort = false
+        state.needsDmaHalt = false
+        
         let lo = bus.read(at: InterruptType.reset.rawValue)
         let hi = bus.read(at: InterruptType.reset.rawValue + 1)
         registers.pc = u16(hi: hi, lo: lo)
@@ -169,7 +200,7 @@ public class MOS6502: Codable {
                 registers.s &-= 3
         }
         
-        cycles = -1
+        cycles = u64(bitPattern: -1)
         clock = 12
         
         for _ in 0..<8 {
@@ -192,7 +223,7 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_d0() {
-        branch()
+        branch(shouldBranch: !registers.p.zero)
     }
     
     @inline(__always) private func op_4c() {
@@ -204,7 +235,7 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_10() {
-        branch()
+        branch(shouldBranch: !registers.p.negative)
     }
     
     @inline(__always) private func op_c9() {
@@ -212,11 +243,11 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_30() {
-        branch()
+        branch(shouldBranch: registers.p.negative)
     }
     
     @inline(__always) private func op_f0() {
-        branch()
+        branch(shouldBranch: registers.p.zero)
     }
     
     @inline(__always) private func op_24() {
@@ -244,7 +275,7 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_b0() {
-        branch()
+        branch(shouldBranch: registers.p.carry)
     }
     
     @inline(__always) private func op_bd() {
@@ -584,7 +615,7 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_50() {
-        branch()
+        branch(shouldBranch: !registers.p.overflow)
     }
     
     @inline(__always) private func op_51() {
@@ -709,7 +740,7 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_70() {
-        branch()
+        branch(shouldBranch: registers.p.overflow)
     }
     
     @inline(__always) private func op_71() {
@@ -825,7 +856,7 @@ public class MOS6502: Codable {
     }
     
     @inline(__always) private func op_90() {
-        branch()
+        branch(shouldBranch: !registers.p.carry)
     }
     
     @inline(__always) private func op_91() {

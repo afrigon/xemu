@@ -14,9 +14,11 @@ extension MOS6502 {
         var nmiSignal: Bool = false
         var nmiOldSignal: Bool = false
 
-        var oamdmaActive: Bool = false
-        var oamdmaPage: u16 = 0
-        var oamdmaTick: u16 = 0
-        var oamdmaTemp: u8 = 0
+        var dmcDmaActive: Bool = false
+        var dmcDmaAbort: Bool = false
+        var oamDmaActive: Bool = false
+        var oamDmaOffset: u8 = 0
+        var needsDmaDummyRead: Bool = false
+        var needsDmaHalt: Bool = false
     }
 }

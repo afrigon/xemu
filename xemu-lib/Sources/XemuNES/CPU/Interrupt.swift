@@ -13,23 +13,175 @@ extension MOS6502 {
         case irq = 0xFFFE
     }
     
-    func handleOAMDMA() {
-        state.oamdmaTick -= 1
-        
-        if state.oamdmaTick == 0 {
-            state.oamdmaActive = false
+    func handleDma(_ address: u16) {
+        guard state.needsDmaHalt else {
+            return
         }
         
-        switch state.oamdmaTick {
-            case 512, 513:
-                break
-            case _ where Bool(state.oamdmaTick & 1):
-                let address = state.oamdmaPage | ((511 - state.oamdmaTick) / 2)
-                state.oamdmaTemp = bus.read(at: address)
-            case _ where !Bool(state.oamdmaTick & 1):
-                bus.write(state.oamdmaTemp, at: 0x2004)
-            default:
-                break
+        let enableInternalRegisterRead = (address & 0xffe0) == 0x4000
+        var skipFirstInputClock = false
+        var previousAddress = address
+
+        let skipDummyReads = address == 0x4016 || address == 0x4017
+        
+        if enableInternalRegisterRead && state.dmcDmaActive && skipDummyReads {
+            let dmcAddress = bus.getDmcReadAddress()
+            
+            if dmcAddress & 0x1f == address & 0x1f {
+                skipFirstInputClock = true
+            }
+        }
+        
+        state.needsDmaHalt = false
+        
+        startCycle(read: true)
+        
+        if state.dmcDmaAbort && skipDummyReads {
+            
+        } else if !skipFirstInputClock {
+            bus.read(at: address)
+        }
+        
+        endCycle(read: true)
+        
+        if state.dmcDmaAbort {
+            state.dmcDmaActive = false
+            state.dmcDmaAbort = false
+            
+            if !state.oamDmaActive {
+                state.needsDmaDummyRead = false
+                return
+            }
+        }
+        
+        var oamCounter: u16 = 0
+        var oamAddress: u8 = 0
+        var value: u8 = 0
+        
+        let cycle: () -> Void = { [weak self] in
+            guard let self else {
+                return
+            }
+            
+            if self.state.dmcDmaAbort {
+                self.state.dmcDmaActive = false
+                self.state.dmcDmaAbort = false
+                self.state.needsDmaDummyRead = false
+                self.state.needsDmaHalt = false
+            } else if self.state.needsDmaHalt {
+                self.state.needsDmaHalt = false
+            } else if self.state.needsDmaDummyRead {
+                self.state.needsDmaDummyRead = false
+            }
+            
+            startCycle(read: true)
+        }
+        
+        while state.dmcDmaActive || state.oamDmaActive {
+            let isGetCycle = self.cycles & 0x01 == 0
+            
+            if isGetCycle {
+                if state.dmcDmaActive && !state.needsDmaHalt && !state.needsDmaDummyRead {
+                    cycle()
+                    
+                    value = handleDmaRead(
+                        at: bus.getDmcReadAddress(),
+                        previousAddress: &previousAddress,
+                        enableInternalRegisterReads: enableInternalRegisterRead
+                    )
+                    
+                    endCycle(read: true)
+                    state.dmcDmaActive = false
+                    state.dmcDmaAbort = false
+                    
+                    // TODO: set apu dmc read buffer
+                } else if state.oamDmaActive {
+                    cycle()
+                    
+                    value = handleDmaRead(
+                        at: u16(state.oamDmaOffset) &* 0x100 &+ u16(oamAddress),
+                        previousAddress: &previousAddress,
+                        enableInternalRegisterReads: enableInternalRegisterRead
+                    )
+                    
+                    endCycle(read: true)
+                    oamAddress &+= 1
+                    oamCounter &+= 1
+                } else {
+                    assert(state.needsDmaHalt || state.needsDmaDummyRead)
+                    cycle()
+                    
+                    if !skipDummyReads {
+                        bus.read(at: address)
+                    }
+                    
+                    endCycle(read: true)
+                }
+            } else {
+                if state.oamDmaActive && Bool(oamCounter & 0x01) {
+                    cycle()
+                    bus.write(value, at: 0x2004)
+                    endCycle(read: true)
+                    
+                    oamCounter &+= 1
+                    
+                    if oamCounter == 0x200 {
+                        state.oamDmaActive = false
+                    }
+                } else {
+                    cycle()
+                    
+                    if !skipDummyReads {
+                        bus.read(at: address)
+                    }
+                    
+                    endCycle(read: true)
+                }
+            }
+        }
+    }
+    
+    func handleDmaRead(at address: u16, previousAddress: inout u16, enableInternalRegisterReads: Bool) -> u8 {
+        var value: u8
+        
+        if !enableInternalRegisterReads {
+            if address >= 0x4000 && address <= 0x401f {
+                value = 0 // TODO: replace with open bus
+            } else {
+                value = bus.read(at: address)
+            }
+            
+            previousAddress = address
+            
+            return value
+        } else {
+            let internalAddress = 0x4000 | (address & 0x1f)
+            let isSameAddress = internalAddress == address
+            
+            switch internalAddress {
+                case 0x4015:
+                    value = bus.read(at: internalAddress)
+                    
+                    if !isSameAddress {
+                        bus.read(at: address)
+                    }
+                case 0x4016, 0x4017:
+                    if previousAddress == internalAddress {
+                        value = 0 // TODO: replace with open bus
+                    } else {
+                        value = bus.read(at: internalAddress)
+                    }
+                    
+                    if !isSameAddress {
+                        // TODO: figure out what should go in here
+                    }
+                default:
+                    value = bus.read(at: address)
+            }
+            
+            previousAddress = internalAddress
+            
+            return value
         }
     }
     

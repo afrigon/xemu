@@ -28,9 +28,25 @@ final class PPU: Codable {
     private var tile: Tile = .init()
     private var lo: u16 = 0
     private var hi: u16 = 0
-    
     private var tilePalette: u8 = 0
     private var oldTilePalette: u8 = 0
+    
+    private var oamAddress: u8 = 0
+    private var oamAddressLo: u8 = 0
+    private var oamAddressHi: u8 = 0
+    private var oamSecondaryAddress: u8 = 0
+    private var oam: [u8] = .init(repeating: 0, count: 256)
+    private var oamSecondary: [u8] = .init(repeating: 0, count: 32)
+    private var oamBuffer: u8 = 0
+    private var sprite0Visible: Bool = false
+    private var spriteIndex: u8 = 0
+    private var spriteCount: u8 = 0
+    private var sprites: [Sprite] = .init(repeating: .init(), count: 64)
+    private var hasSprite: [Bool] = .init(repeating: false, count: 257)
+    private var sprite0Added: Bool = false
+    private var spriteInRange: Bool = false
+    private var overflowBugCounter: u8 = 0
+    private var oamCopyDone: Bool = false
 
     private var dirty: Bool = false
     private var renderingEnabled: Bool = true
@@ -44,6 +60,7 @@ final class PPU: Codable {
     
     private var firstBackgroundDot: u16 = 0
     private var firstSpriteDot: u16 = 0
+    private var allowFullAccess: Bool = false
     
     private var paletteRAM: [u8] = [
         0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D, 0x08, 0x10, 0x08, 0x24, 0x00, 0x00, 0x04, 0x2C,
@@ -80,6 +97,23 @@ final class PPU: Codable {
         tilePalette = 0
         oldTilePalette = 0
         
+        oamAddress = 0
+        oamAddressLo = 0
+        oamAddressHi = 0
+        oamSecondaryAddress = 0
+        oam = .init(repeating: 0, count: 256)
+        oamSecondary = .init(repeating: 0, count: 32)
+        oamBuffer = 0
+        spriteIndex = 0
+        spriteCount = 0
+        sprite0Visible = false
+        sprites = .init(repeating: .init(), count: 64)
+        hasSprite = .init(repeating: false, count: 257)
+        sprite0Added = false
+        spriteInRange = false
+        overflowBugCounter = 0
+        oamCopyDone = false
+
         control = .init()
         mask = .init()
         
@@ -98,6 +132,7 @@ final class PPU: Codable {
         dot = 340
         
         frameCount = 1
+        allowFullAccess = false
         
         cacheFirstDrawDots()
     }
@@ -108,13 +143,18 @@ final class PPU: Codable {
     }
     
     private func setControl(_ data: u8) {
+        guard allowFullAccess else {
+            return
+        }
+        
         let nametable = data & 0b11
         t = (t & ~0x0C00) | (u16(nametable) << 10)
         
-        // TODO: set missing stuff
         control.verticalIncrement = data & 0x04 == 0x04 ? 32 : 1
         control.spritePatternAddress = data & 0x08 == 0x08 ? 0x1000 : 0x0000
         control.backgroundPatternAddress = data & 0x10 == 0x10 ? 0x1000 : 0x0000
+        control.largeSprites = data & 0x20 == 0x20
+        control.secondaryPPU = data & 0x40 == 0x40
         control.nmiOnVBlank = data & 0x80 == 0x80
         
         // setting nmiOnVBlank during a vblank without reading 0x2002 can cause multiple nmi to be generated
@@ -126,6 +166,10 @@ final class PPU: Codable {
     }
     
     private func setMask(_ data: u8) {
+        guard allowFullAccess else {
+            return
+        }
+        
         mask.grayscale = data & 0x01 == 0x01
         mask.backgroundMask = data & 0x02 == 0x02
         mask.spritesMask = data & 0x04 == 0x04
@@ -231,9 +275,25 @@ final class PPU: Codable {
                 
                 return value
             case 4:
+                if scanline <= 239 && renderingEnabled {
+                    if dot >= 257 && dot <= 320 {
+                        let step = ((dot - 257) % 8) > 3 ? 3 : ((dot - 257) % 8)
+                        oamSecondaryAddress = u8((dot - 257) / 8 * 4 + step)
+                        oamBuffer = oamSecondary[Int(oamSecondaryAddress)]
+                    }
+                    
+                    latch = oamBuffer
+                } else {
+                    latch = oam[Int(oamAddress)]
+                }
+                
                 return latch
             case 7:
-                if vSuppress > 0 {
+                guard allowFullAccess else {
+                    return 0
+                }
+                
+                guard vSuppress <= 0 else {
                     return latch
                 }
                 
@@ -263,10 +323,25 @@ final class PPU: Codable {
             case 1:  // PPUMASK
                 setMask(data)
             case 3:  // OAMADDR
-                break
+                oamAddress = data
             case 4:  // OAMDATA
-                break
+                var value = data
+                
+                if scanline >= 240 || !renderingEnabled {
+                    if oamAddress & 0b11 == 0b10 {
+                        value &= 0xe3
+                    }
+                    
+                    writeOAM(data: value, at: oamAddress)
+                    oamAddress &+= 1
+                } else {
+                    oamAddress &+= 4
+                }
             case 5:  // PPUSCROLL
+                guard allowFullAccess else {
+                    return
+                }
+                
                 if w {
                     t = (t & ~0x73e0) | (u16(data & 0xf8) << 2) | (u16(data & 0x07) << 12)
                 } else {
@@ -278,6 +353,10 @@ final class PPU: Codable {
                 
                 w.toggle()
             case 6:  // PPUADDR
+                guard allowFullAccess else {
+                    return
+                }
+                
                 if w {
                     t = (t & ~0x00ff) | u16(data)
                     vNext = t
@@ -338,6 +417,14 @@ final class PPU: Codable {
         }
     }
     
+    private func readOAM(at address: u8) -> u8 {
+        oam[Int(address)]
+    }
+    
+    private func writeOAM(data: u8, at address: u8) {
+        oam[Int(address)] = data
+    }
+
     private func drawPixel() {
         if renderingEnabled || (v & 0x3f00) != 0x3f00 {
             let color = pixelColor()
@@ -350,11 +437,41 @@ final class PPU: Codable {
     private func pixelColor() -> u8 {
         let offset = x
         var background: u8 = 0
-        var sprite: u8 = 0
+        var spriteBackground: u8 = 0
 
         if dot > firstBackgroundDot {
-            sprite = u8((((lo << offset) & 0x8000) >> 15) | (((hi << offset) & 0x8000) >> 14))
-            background = sprite
+            spriteBackground = u8((((lo << offset) & 0x8000) >> 15) | (((hi << offset) & 0x8000) >> 14))
+            background = spriteBackground
+        }
+        
+        if hasSprite[dot] && dot > firstSpriteDot {
+            for i in 0..<Int(spriteCount) {
+                let shift = dot - Int(sprites[i].x) - 1
+                
+                guard shift >= 0 && shift < 8 else {
+                    continue
+                }
+                
+                let sprite = if sprites[i].mirror {
+                    ((sprites[i].lo >> shift) & 0x01) |
+                    (((sprites[i].hi >> shift) & 0x01) << 1)
+                } else {
+                    (((sprites[i].lo << shift) & 0x80) >> 7) |
+                    (((sprites[i].hi << shift) & 0x80) >> 6)
+                }
+                
+                if sprite != 0 {
+                    if i == 0 && spriteBackground != 0 && sprite0Visible && dot != 256 && mask.backgroundEnabled && !status.sprite0Hit {
+                        status.sprite0Hit = true
+                    }
+                    
+                    if background == 0 || !sprites[i].backgroundPriority {
+                        return sprites[i].paletteOffset + sprite
+                    }
+                    
+                    break
+                }
+            }
         }
         
         return ((u8(Int(offset) &+ ((dot - 1) & 0x07)) < 8) ? oldTilePalette : tilePalette) + background
@@ -387,6 +504,184 @@ final class PPU: Codable {
         }
     }
     
+    private func fetchSprite() {
+        let spriteAddress: u8 = spriteIndex &* 4
+        fetchSprite(
+            x: oamSecondary[Int(spriteAddress &+ 3)],
+            y: oamSecondary[Int(spriteAddress)],
+            index: oamSecondary[Int(spriteAddress &+ 1)],
+            attributes: oamSecondary[Int(spriteAddress &+ 2)]
+        )
+    }
+
+    private func fetchSprite(x: u8, y: u8, index: u8, attributes: u8) {
+        let backgroundPriority = (attributes & 0x20) == 0x20
+        let horizontalMirror = (attributes & 0x40) == 0x40
+        let verticalMirror = (attributes & 0x80) == 0x80
+        
+        let delta = Int(scanline) &- Int(y)
+        
+        let lineOffset: u8 = if verticalMirror {
+            (control.largeSprites ? 15 : 7) &- u8(truncatingIfNeeded: delta)
+        } else {
+            u8(truncatingIfNeeded: delta)
+        }
+        
+        let tileAddress: u16 = if control.largeSprites {
+            ((Bool(index & 0x01) ? 0x1000 : 0x0000) | (u16(index & ~0x01) << 4)) &+ (lineOffset >= 8 ? u16(lineOffset) &+ 8 : u16(lineOffset))
+        } else {
+            ((u16(index) << 4) | control.spritePatternAddress) &+ u16(lineOffset)
+        }
+        
+        if spriteIndex < spriteCount && y < 240 {
+            let index = Int(spriteIndex)
+            sprites[index].backgroundPriority = backgroundPriority
+            sprites[index].mirror = horizontalMirror
+            sprites[index].paletteOffset = ((attributes & 0x03) << 2) | 0x10
+            sprites[index].lo = bus.ppuRead(at: tileAddress)
+            sprites[index].hi = bus.ppuRead(at: tileAddress &+ 8)
+            sprites[index].x = x
+            
+            if scanline >= 0 {
+                for i in 0..<8 {
+                    let index = Int(x) &+ i &+ 1
+                    
+                    if index >= 257 {
+                        break
+                    }
+                    
+                    hasSprite[index] = true
+                }
+            }
+        }
+        
+        spriteIndex &+= 1
+    }
+
+    private func evaluateSprite() {
+        guard renderingEnabled else {
+            return
+        }
+        
+        if dot < 65 {
+            oamBuffer = 0xff
+            oamSecondary[(dot &- 1) >> 1] = 0xff
+        } else {
+            if Bool(dot & 1) {
+                if dot == 65 {
+                    evaluateSpriteStart()
+                }
+                
+                oamBuffer = readOAM(at: oamAddress)
+            } else {
+                if dot == 256 {
+                    evaluateSpriteEnd()
+                }
+                
+                if oamCopyDone {
+                    oamAddressHi = (oamAddressHi &+ 1) & 0x3f
+                    
+                    if oamSecondaryAddress >= 0x20 {
+                        oamBuffer = oamSecondary[Int(oamSecondaryAddress & 0x1f)]
+                    }
+                } else {
+                    if !spriteInRange && scanline >= oamBuffer && scanline < (oamBuffer &+ (control.largeSprites ? 16 : 8)) {
+                        spriteInRange = !oamCopyDone
+                    }
+                    
+                    if oamSecondaryAddress < 0x20 {
+                        oamSecondary[Int(oamSecondaryAddress)] = oamBuffer
+                        
+                        if spriteInRange {
+                            if dot == 66 {
+                                sprite0Added = true
+                            }
+                            
+                            oamAddressLo &+= 1
+                            oamSecondaryAddress &+= 1
+                            
+                            if oamAddressLo >= 4 {
+                                oamAddressHi = (oamAddressHi &+ 1) & 0x3f
+                                oamAddressLo = 0
+                                
+                                if oamAddressHi == 0 {
+                                    oamCopyDone = true
+                                }
+                            }
+                            
+                            if oamSecondaryAddress & 0x03 == 0 {
+                                spriteInRange = false
+                                
+                                if oamAddressLo != 0 {
+                                    if !(scanline >= oamBuffer && scanline < oamBuffer + (control.largeSprites ? 16 : 8)) {
+                                        oamAddressLo = 0
+                                    }
+                                }
+                            }
+                        } else {
+                            oamAddressHi = (oamAddressHi &+ 1) & 0x3f
+                            oamAddressLo = 0
+                            
+                            if oamAddressHi == 0 {
+                                oamCopyDone = true
+                            }
+                        }
+                    } else {
+                        oamBuffer = oamSecondary[Int(oamSecondaryAddress & 0x1f)]
+                        
+                        if oamCopyDone {
+                            oamAddressHi = (oamAddressHi &+ 1) & 0x3f
+                            oamAddressLo = 0
+                        } else if spriteInRange {
+                            status.spriteOverflow = true
+                            oamAddressLo &+= 1
+                            
+                            if oamAddressLo == 4 {
+                                oamAddressHi = (oamAddressHi &+ 1) & 0x3f
+                                oamAddressLo = 0
+                            }
+                            
+                            if overflowBugCounter == 0 {
+                                overflowBugCounter = 3
+                            } else if overflowBugCounter > 0 {
+                                overflowBugCounter &-= 1
+                                
+                                if overflowBugCounter == 0 {
+                                    oamCopyDone = true
+                                    oamAddressLo = 0
+                                }
+                            }
+                        } else {
+                            oamAddressHi = (oamAddressHi &+ 1) & 0x3f
+                            oamAddressLo = (oamAddressLo &+ 1) & 0x03
+                            
+                            if oamAddressHi == 0 {
+                                oamCopyDone = true
+                            }
+                        }
+                    }
+                }
+                
+                oamAddress = (oamAddressLo & 0x03) | oamAddressHi << 2
+            }
+        }
+    }
+    
+    private func evaluateSpriteStart() {
+        sprite0Added = false
+        spriteInRange = false
+        oamSecondaryAddress = 0
+        overflowBugCounter = 0
+        oamCopyDone = false
+        oamAddressHi = (oamAddress >> 2) & 0x3f
+        oamAddressLo = oamAddress & 0x03
+    }
+    
+    private func evaluateSpriteEnd() {
+        sprite0Visible = sprite0Added
+        spriteCount = (oamSecondaryAddress + 3) >> 2
+    }
+
     private func firstDot() {
         dot = 0
         scanline += 1
@@ -394,12 +689,16 @@ final class PPU: Codable {
         if scanline > 260 {
             scanline = -1
             
+            spriteCount = 0
+            
             cacheFirstDrawDots()
         }
         
         if scanline < 240 {
             if scanline == -1 {
-                
+                status.spriteOverflow = false
+                status.sprite0Hit = false
+                allowFullAccess = true
             } else if oldRenderingEnabled {
                 if scanline > 0 || u8(truncatingIfNeeded: frameCount) & 1 == 0 {
                     busAddress = (tile.address << 4) | (v >> 12) | control.backgroundPatternAddress
@@ -426,15 +725,26 @@ final class PPU: Codable {
             if scanline >= 0 {
                 drawPixel()
                 shift()
-            } else {
+                
+                evaluateSprite()
+            } else if dot < 9 {
                 if dot == 1 {
                     status.verticalBlank = false
                     bus.setNMI(false)
                 }
+                
+                if oamAddress >= 0x08 && renderingEnabled {
+                    let data = readOAM(at: (oamAddress & 0xf8) &+ u8(dot) &- 1)
+                    writeOAM(data: data, at: u8(dot) &- 1)
+                }
             }
         } else if dot >= 257 && dot <= 320 {
             if dot == 257 {
-                // TODO: add sprite stuff
+                spriteIndex = 0
+                
+                for i in 0..<hasSprite.count {
+                    hasSprite[i] = false
+                }
                 
                 if oldRenderingEnabled {
                     v = (v & ~0x041F) | (t & 0x041F)
@@ -442,7 +752,7 @@ final class PPU: Codable {
             }
                 
             if renderingEnabled {
-                // TODO: sprite stuff
+                oamAddress = 0
                 
                 switch (dot - 257) % 8 {
                     case 0:
@@ -450,7 +760,7 @@ final class PPU: Codable {
                     case 2:
                         bus.ppuRead(at: attributeAddress())
                     case 4:
-                        // TODO: some sprite stuff
+                        fetchSprite()
                         break
                     default:
                         break
@@ -459,16 +769,14 @@ final class PPU: Codable {
                 if scanline == -1 && dot >= 280 && dot <= 304 {
                     v = (v & ~0x7BE0) | (t & 0x7BE0)
                 }
-                
-                if dot == 320 {
-                    // TODO: some sprite stuff
-                }
             }
         } else if dot >= 321 && dot <= 336 {
            fetchTile()
             
             if dot == 321 {
-                // TODO: some oam stuff
+                if renderingEnabled {
+                    oamBuffer = oamSecondary[0]
+                }
             } else if oldRenderingEnabled && (dot == 328 || dot == 336) {
                 lo <<= 8
                 hi <<= 8
@@ -494,7 +802,10 @@ final class PPU: Codable {
             } else if dot == 1 && scanline == 241 {
                 if !suppressVBlank {
                     status.verticalBlank = true
-                    bus.setNMI(true)
+                    
+                    if control.nmiOnVBlank {
+                        bus.setNMI(true)
+                    }
                 }
                 
                 suppressVBlank = false
@@ -526,15 +837,14 @@ final class PPU: Codable {
             oldRenderingEnabled = renderingEnabled
             
             if scanline < 240 {
-                if oldRenderingEnabled {
-                    // TODO: oam corruption
-                } else {
-                    // TODO: oam corruption
-                    
+                if !oldRenderingEnabled {
                     busAddress = v & 0x3fff
                     
                     if dot >= 65 && dot <= 256 {
-                        // TODO: sprite stuff
+                        oamAddress &+= 1
+                        
+                        oamAddressHi = (oamAddress >> 2) & 0x3f
+                        oamAddressLo = oamAddress & 0x03
                     }
                 }
             }
@@ -577,7 +887,7 @@ final class PPU: Codable {
     
     private func updateV() {
         if scanline >= 240 || !renderingEnabled {
-            v = (v + control.verticalIncrement) & 0x7fff
+            v = ((v + control.verticalIncrement)) & 0x7fff
             busAddress = v & 0x3fff
         } else {
             incHorizontalScroll()
