@@ -56,7 +56,6 @@ struct EmulatorIndexedRenderView: View {
                 draw(view)
             }
         )
-        .aspectRatio(emulator.frameAspectRatio, contentMode: .fit)
     }
     
     private func setup(_ view: MTKView) {

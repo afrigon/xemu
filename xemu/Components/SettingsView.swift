@@ -3,7 +3,8 @@ import stylx
 
 struct SettingsView: View {
     @AppStorage(.gameCollectionSorting) private var gameCollectionSorting: GameCollectionSorting = .lastPlayed
-    
+    @AppStorage(.showFPS) private var showFPS: Bool = false
+
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -24,6 +25,10 @@ struct SettingsView: View {
                         Text("Game Title")
                             .tag(GameCollectionSorting.name)
                     }
+                }
+                
+                Section("Advanced") {
+                    Toggle("Show FPS", isOn: $showFPS)
                 }
             }
             .title("Settings", displayMode: .inline)

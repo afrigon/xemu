@@ -64,8 +64,6 @@ final class MapperCNROM: Mapper {
     
     func ppuWrite(_ data: u8, at address: u16) {
         switch address {
-            case 0x0000..<0x2000:
-                chrrom.bankedWrite(data, at: address, bankIndex: Int(chrbank), bankSize: 0x2000)
             case 0x2000..<0x4000:
                 vram.write(data, at: nametableLayout.map(address))
             default:

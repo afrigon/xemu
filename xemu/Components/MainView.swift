@@ -23,9 +23,7 @@ struct MainView: View {
                     ErrorView(error: error)
                 case .menu:
                     MenuView()
-                case .gaming(let game):
-//                    let file = try! iNesFile(game.data)
-//                    NESPatternTableView(iNes: file)
+                case .game(let game):
                     GameView(game: game)
             }
         }

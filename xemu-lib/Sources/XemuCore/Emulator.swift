@@ -8,6 +8,7 @@ public protocol Emulator: Codable {
     
     var frameBuffer: [u8] { get }
     var audioBuffer: [f32]? { get }
+    var backgroundColor: u8 { get }
 
     func load(program: Data, saveData: Data?) throws(XemuError)
     

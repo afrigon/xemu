@@ -71,6 +71,16 @@ final class PPU: Codable {
         frameBuffer
     }
     
+    var backgroundColor: u8 {
+        let color = if (renderingEnabled && scanline < 240) || (busAddress & 0x3F00) != 0x3f00 {
+            paletteRAM[0]
+        } else {
+            paletteRAM[busAddress & 0x1f]
+        }
+        
+        return color & 0x3f
+    }
+    
     weak var bus: Bus!
 
     init(bus: Bus) {
@@ -390,7 +400,7 @@ final class PPU: Codable {
         var address = address & 0x1f
         
         if address == 0x10 || address == 0x14 || address == 0x18 || address == 0x1c {
-            address &= 0x10
+            address &= ~0x10
         }
         
         return paletteRAM[Int(address)]

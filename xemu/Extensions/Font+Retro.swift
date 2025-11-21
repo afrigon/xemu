@@ -2,27 +2,30 @@ import SwiftUI
 import stylx
 
 enum RetroFontSize {
-    case header
-    case title
-    case subtitle
-    case body
+    case xl
+    case l
+    case m
+    case s
+    case xs
     
     var value: CGFloat {
         return switch self {
-            case .header:
+            case .xl:
                 .init(19, tvOS: 38)
-            case .title:
+            case .l:
                 .init(16, tvOS: 32)
-            case .subtitle:
+            case .m:
                 .init(14, tvOS: 28)
-            case .body:
+            case .s:
+                .init(12, tvOS: 24)
+            case .xs:
                 .init(10, tvOS: 20)
         }
     }
     
     var lineSpacing: CGFloat {
         return switch self {
-            case .body:
+            case .xs:
                 .xxs
             default:
                 1
@@ -31,13 +34,13 @@ enum RetroFontSize {
 }
 
 extension Font {
-    static func retro(size: RetroFontSize, weight: TextWeight = .regular) -> Font {
-        .monaspace(size: size.value, weight: weight.value)
+    static func retro(size: RetroFontSize, weight: Font.Weight = .regular) -> Font {
+        .monaspace(size: size.value, weight: weight)
     }
 }
 
 extension View {
-    func retroTextStyle(size: RetroFontSize, weight: TextWeight = .regular) -> some View {
+    func retroTextStyle(size: RetroFontSize, weight: Font.Weight = .regular) -> some View {
         self
             .font(.retro(size: size, weight: weight))
             .lineSpacing(size.lineSpacing)
@@ -47,21 +50,21 @@ extension View {
 #Preview {
     VStack {
         Text("The quick brown fox jumps over the lazy dog")
-            .retroTextStyle(size: .header, weight: .bold)
+            .retroTextStyle(size: .xl, weight: .bold)
         Text("The quick brown fox jumps over the lazy dog")
-            .retroTextStyle(size: .title, weight: .bold)
+            .retroTextStyle(size: .l, weight: .bold)
         Text("The quick brown fox jumps over the lazy dog")
-            .retroTextStyle(size: .subtitle, weight: .bold)
+            .retroTextStyle(size: .m, weight: .bold)
         Text("The quick brown fox jumps over the lazy dog")
-            .retroTextStyle(size: .body, weight: .bold)
+            .retroTextStyle(size: .xs, weight: .bold)
         
         Text("The quick brown fox jumps over the lazy dog")
-            .retroTextStyle(size: .header)
+            .retroTextStyle(size: .xl)
         Text("The quick brown fox jumps over the lazy dog")
-            .retroTextStyle(size: .title)
+            .retroTextStyle(size: .l)
         Text("The quick brown fox jumps over the lazy dog")
-            .retroTextStyle(size: .subtitle)
+            .retroTextStyle(size: .m)
         Text("The quick brown fox jumps over the lazy dog")
-            .retroTextStyle(size: .body)
+            .retroTextStyle(size: .xs)
     }
 }

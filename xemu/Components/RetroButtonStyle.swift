@@ -26,7 +26,7 @@ public struct RetroButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .lineLimit(1)
-            .retroTextStyle(size: .subtitle, weight: .bold)
+            .retroTextStyle(size: .m, weight: .bold)
             .padding(.vertical, scale.verticalPadding)
             .padding(.horizontal, format == .regular || format == .capsule ? scale.horizontalPadding : scale.verticalPadding)
             .modify(if: isLoading) { $0.foregroundStyle(.clear) }

@@ -45,7 +45,7 @@ struct GameDatabaseReleasesView: View {
                             Text(item.name)
                                 .lineLimit(2)
                                 .foregroundStyle(.foregroundDefault)
-                                .retroTextStyle(size: .title)
+                                .retroTextStyle(size: .l)
                         }
                     })
                 }
@@ -54,7 +54,7 @@ struct GameDatabaseReleasesView: View {
                 if items.isEmpty {
                     VStack {
                         Text("No releases found")
-                            .retroTextStyle(size: .header, weight: .bold)
+                            .retroTextStyle(size: .xl, weight: .bold)
                     }
                 }
             }

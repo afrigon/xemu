@@ -2,6 +2,7 @@ import SwiftUI
 
 enum AppStorageKey: String {
     case gameCollectionSorting = "settings.game-collection.sorting"
+    case showFPS = "settings.advanced.show-fps"
 }
 
 extension AppStorage {

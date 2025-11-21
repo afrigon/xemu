@@ -1,5 +1,6 @@
 import Observation
 import XemuFoundation
+import SwiftUI
 
 enum NESInputKey: u8 {
     case a = 1
@@ -26,5 +27,24 @@ class NESInput {
 
     func encode() -> u8 {
         pressed.reduce(0) { $0 | $1.rawValue }
+    }
+    
+    func isPressed(_ key: NESInputKey) -> Bool {
+        pressed.contains(key)
+    }
+
+    func binding(for key: NESInputKey) -> Binding<Bool> {
+        Binding(
+            get: { [weak self] in
+                self?.pressed.contains(key) ?? false
+            },
+            set: { [weak self] value in
+                if value {
+                    self?.keyDown(key)
+                } else {
+                    self?.keyUp(key)
+                }
+            }
+        )
     }
 }

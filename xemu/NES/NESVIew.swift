@@ -4,6 +4,8 @@ import XemuCore
 import XemuNES
 
 struct NESView: View {
+    @AppStorage(.showFPS) var showFPS: Bool = false
+
     @Environment(AppContext.self) var context
     @Environment(NESInput.self) var input
     @Environment(\.scenePhase) var scenePhase
@@ -13,11 +15,18 @@ struct NESView: View {
     private let nes: NES
     private let audio: AudioService?
 
-    @State private var isRunning = true
+    @Binding var isRunning: Bool
     @State private var fps: Int = 60
+    @State private var backgroundColor: Color = .gray
     @FocusState private var focused: Bool
 
-    init(game: Data, palette: Palette) {
+    init(
+        isRunning: Binding<Bool>,
+        nes: NES = .init(),
+        game: Data,
+        palette: Palette
+    ) {
+        self._isRunning = isRunning
         self.game = game
         self.palette = stride(from: 0, to: palette.data.count, by: 3)
             .map {
@@ -27,36 +36,43 @@ struct NESView: View {
                     Float(palette.data[$0 + 2]) / 255
                 )
             }
-        self.nes = .init()
+        self.nes = nes
         self.audio = .init()
     }
     
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            EmulatorIndexedRenderView($isRunning, nes, palette) { delta in
-                update(delta)
+        ZStack(alignment: .center) {
+            backgroundColor
+                .backgroundExtensionEffect()
+            
+            ZStack(alignment: .top) {
+                EmulatorIndexedRenderView($isRunning, nes, palette) { delta in
+                    update(delta)
+                    
+                    if delta > 0 {
+                        fps = Int((1 / delta).rounded())
+                    }
+                }
+                .aspectRatio(nes.frameAspectRatio, contentMode: .fit)
                 
-                if delta > 0 {
-                    fps = Int((1 / delta).rounded())
+                if showFPS {
+                    HStack(spacing: .zero) {
+                        VStack(spacing: 8) {
+                            Text(verbatim: "\(fps)")
+                        }
+                        .padding(.m)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .foregroundStyle(.white)
+                    .retroTextStyle(size: .xl)
+                    .shadow(color: .black, radius: 0.1, x: -1, y:  0)
+                    .shadow(color: .black, radius: 0.1, x:  1, y:  0)
+                    .shadow(color: .black, radius: 0.1, x:  0, y:  1)
+                    .shadow(color: .black, radius: 0.1, x:  0, y: -1)
                 }
             }
-            .onTapGesture {
-                isRunning.toggle()
-            }
-                
-            Group {
-                VStack(spacing: 8) {
-                    Text(verbatim: "\(fps)")
-                }
-                .padding(.m)
-            }
-            .foregroundStyle(.white)
-            .retroTextStyle(size: .header)
-            .shadow(color: .black, radius: 0.1, x: -1, y:  0)
-            .shadow(color: .black, radius: 0.1, x:  1, y:  0)
-            .shadow(color: .black, radius: 0.1, x:  0, y:  1)
-            .shadow(color: .black, radius: 0.1, x:  0, y: -1)
         }
+        .frame(maxHeight: .infinity, alignment: .center)
         .onAppear {
             do throws(XemuError) {
                 try nes.load(program: game)
@@ -81,7 +97,9 @@ struct NESView: View {
             }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
-            isRunning = newPhase == .active
+            if newPhase != .active {
+                isRunning = false
+            }
         }
         .focusable()
         .focused($focused)
@@ -104,8 +122,8 @@ struct NESView: View {
                 case "d": fn(.right)
                 case "i": fn(.start)
                 case "u": fn(.select)
-                case "k": fn(.b)
-                case "j": fn(.a)
+                case "j": fn(.b)
+                case "k": fn(.a)
                 default:
                     return .ignored
             }
@@ -120,14 +138,20 @@ struct NESView: View {
         do {
             try nes.stepFrame()
         } catch let error {
-            // TODO: do something with nes crash
-            print(error)
             isRunning = false
             context.error = error
+            context.set(state: .menu)
         }
         
         if let buffer = nes.audioBuffer {
             audio?.schedule(buffer)
         }
+        
+        let color = palette[Int(nes.backgroundColor)]
+        backgroundColor = Color(
+            red: Double(color.x),
+            green: Double(color.y),
+            blue: Double(color.z)
+        )
     }
 }

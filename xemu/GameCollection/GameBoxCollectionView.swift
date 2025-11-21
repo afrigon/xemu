@@ -59,11 +59,11 @@ struct GameBoxCollectionView: View {
                         .resizable()
                         .frame(width: .init(.xxxxxl, tvOS: .xxxxxxxl), height: .init(.xxxxxl, tvOS: .xxxxxxxl))
                     Text("No Games")
-                        .retroTextStyle(size: .header, weight: .bold)
+                        .retroTextStyle(size: .xl, weight: .bold)
                         .padding(.s)
                 }, description: {
                     Text("Your collection is empty. Import games with the + button to start playing.")
-                        .retroTextStyle(size: .subtitle)
+                        .retroTextStyle(size: .m)
                 }, actions: {
                     if let importOpen {
                         Button("Import Games") {

@@ -4,16 +4,25 @@
     "" : {
 
     },
+    "A" : {
+
+    },
     "Active Controller" : {
 
     },
     "Add Game" : {
 
     },
+    "Advanced" : {
+
+    },
     "All associated data, such as saves and save states, will also be deleted." : {
 
     },
     "Are you sure you want to delete this game?" : {
+
+    },
+    "B" : {
 
     },
     "Cancel" : {
@@ -64,7 +73,10 @@
     "Last Played" : {
 
     },
-    "Menu" : {
+    "Load State" : {
+
+    },
+    "MENU" : {
 
     },
     "Name" : {
@@ -79,22 +91,52 @@
     "OK" : {
 
     },
+    "Paused" : {
+
+    },
+    "Power Cycle" : {
+
+    },
     "Rename" : {
 
     },
     "Rename Game" : {
 
     },
+    "Reset" : {
+
+    },
+    "Resume" : {
+
+    },
+    "Return to Game Library" : {
+
+    },
+    "Save State" : {
+
+    },
     "Search Games" : {
+
+    },
+    "SELECT" : {
 
     },
     "Settings" : {
 
     },
+    "Show FPS" : {
+
+    },
     "Sort By" : {
 
     },
+    "START" : {
+
+    },
     "test" : {
+
+    },
+    "Xemu" : {
 
     },
     "Your collection is empty. Import games with the + button to start playing." : {

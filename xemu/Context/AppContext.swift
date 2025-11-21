@@ -7,10 +7,12 @@ import XemuFoundation
 
 @Observable
 class AppContext {
-    private(set) var state: AppState
-//    private var remoteConfig: RemoteConfig?
     private var initialized: Bool = false
+    
+    private(set) var state: AppState
     var error: XemuError? = nil
+    
+    //    private var remoteConfig: RemoteConfig?
 
     init() {
         state = .loading
@@ -23,7 +25,7 @@ class AppContext {
         
         self.state = state
     }
-    
+
     @MainActor func setup() async {
         guard !initialized else {
             return

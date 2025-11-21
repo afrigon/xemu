@@ -110,7 +110,7 @@ public enum SystemType: String, CaseIterable, Hashable, Codable, Identifiable, S
             case .nes:
                 true
             default:
-                true
+                false
         }
     }
     

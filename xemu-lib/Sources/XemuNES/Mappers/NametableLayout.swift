@@ -26,9 +26,9 @@ public enum NametableLayout: Codable {
             self = .other
         } else {
             if value {
-                self = .horizontal
-            } else {
                 self = .vertical
+            } else {
+                self = .horizontal
             }
         }
     }

@@ -110,8 +110,8 @@
             filePath = "xemu/GameView/EmulatorIndexedRenderView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "88"
-            endingLineNumber = "88"
+            startingLineNumber = "87"
+            endingLineNumber = "87"
             landmarkName = "draw(_:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -126,8 +126,8 @@
             filePath = "xemu-lib/Sources/XemuNES/PPU/PPU.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "797"
-            endingLineNumber = "797"
+            startingLineNumber = "807"
+            endingLineNumber = "807"
             landmarkName = "step()"
             landmarkType = "7">
          </BreakpointContent>
@@ -142,8 +142,8 @@
             filePath = "xemu-lib/Sources/XemuNES/PPU/PPU.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "814"
-            endingLineNumber = "814"
+            startingLineNumber = "824"
+            endingLineNumber = "824"
             landmarkName = "step()"
             landmarkType = "7">
          </BreakpointContent>

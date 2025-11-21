@@ -47,6 +47,8 @@ class AudioService {
     @objc func stop() {
         engine.mainMixerNode.outputVolume = 0
         
+        sampleQueue.removeAll(keepingCapacity: true)
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.engine.stop()
         }
@@ -59,9 +61,12 @@ class AudioService {
         outputData: UnsafeMutablePointer<AudioBufferList>
     ) -> OSStatus {
         guard !sampleQueue.isEmpty else {
+            isSilenced.pointee = true
             return 0
         }
         
+        isSilenced.pointee = false
+
         let count = min(Int(frameCount), sampleQueue.count)
         let output = UnsafeMutableAudioBufferListPointer(outputData)
         let channel = UnsafeMutableBufferPointer<Float>(output[0])

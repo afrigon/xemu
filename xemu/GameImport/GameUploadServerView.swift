@@ -46,10 +46,10 @@ struct GameUploadServerView: SwiftUI.View {
                             +
                             Text(verbatim: url.absoluteString)
                         }
-                        .retroTextStyle(size: .title)
+                        .retroTextStyle(size: .l)
                     } else {
                         Text("Your upload server is started.")
-                            .retroTextStyle(size: .title)
+                            .retroTextStyle(size: .l)
                     }
 
                 Button("Done") {

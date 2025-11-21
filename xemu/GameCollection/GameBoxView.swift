@@ -23,7 +23,7 @@ struct GameBoxView: View {
     var body: some View {
         Button(action: {
             game.lastPlayedDate = Date()
-            context.set(state: .gaming(game))
+            context.set(state: .game(game))
         }, label: {
             VStack(spacing: .s) {
                 if let artwork = game.artwork {
@@ -36,7 +36,7 @@ struct GameBoxView: View {
                 }
                 
                 Text(verbatim: game.name)
-                    .retroTextStyle(size: .body)
+                    .retroTextStyle(size: .xs)
                     .foregroundStyle(.foregroundDefault)
                     .lineLimit(3, reservesSpace: true)
             }

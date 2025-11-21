@@ -28,6 +28,10 @@ public final class NES: Emulator, BusDelegate {
         apu.buffer
     }
     
+    public var backgroundColor: u8 {
+        ppu.backgroundColor
+    }
+
     public var cycles: u64 {
         cpu.cycles
     }

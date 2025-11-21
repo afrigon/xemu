@@ -1,0 +1,16 @@
+- extend background color into safe area
+- UI controller (Nes style + overlay style)
+- Add navigation back to the main menu
+- add save to file
+- finish apu implementation
+- fix dmc oam transfer
+- improve audio buffer accumulation
+- controller support
+- improve macOS UI (game image database, options menu, etc.)
+- add debug tools to the UI
+- fix audio clicks when framerate is low
+- finish implementing debug peek ppu, apu, mapper
+- PAL / DANDY support
+- better iNES parsing
+- implement missing mapper
+- add support for greyscale and emphasis
