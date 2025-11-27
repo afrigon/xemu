@@ -7,6 +7,7 @@ public protocol Emulator: Codable {
     var frameHeight: Int { get }
     
     var frameBuffer: [u8] { get }
+    var saveData: [u8]? { get }
     var audioBuffer: [f32]? { get }
     var backgroundColor: u8 { get }
 

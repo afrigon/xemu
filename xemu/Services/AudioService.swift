@@ -1,6 +1,7 @@
 import AVFoundation
 import XemuFoundation
 
+@MainActor
 class AudioService {
     let engine = AVAudioEngine()
     let frameCapacity: AVAudioFrameCount
@@ -32,6 +33,7 @@ class AudioService {
         engine.prepare()
     }
     
+    @MainActor
     deinit {
         stop()
     }

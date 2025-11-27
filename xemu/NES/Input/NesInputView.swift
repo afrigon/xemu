@@ -43,20 +43,20 @@ struct NesInputView: View {
                         StateButton(isPressed: input.binding(for: .select), label: {
                             RoundedRectangle(cornerRadius: .l)
                                 .fill(black)
+                                .padding(.xs)
+                                .padding(.vertical, 2)
+                                .padding(.top, .m)
                         })
-                        .frame(width: .xxxl, height: .s)
-                        .padding(.xs)
-                        .padding(.vertical, 2)
-                        .padding(.top, .m)
+                        .frame(width: .xxxxl, height: .xxxl)
 
                         StateButton(isPressed: input.binding(for: .start), label: {
                             RoundedRectangle(cornerRadius: .l)
                                 .fill(black)
+                                .padding(.xs)
+                                .padding(.vertical, 2)
+                                .padding(.top, .m)
                         })
-                        .frame(width: .xxxl, height: .s)
-                        .padding(.xs)
-                        .padding(.vertical, 2)
-                        .padding(.top, .m)
+                        .frame(width: .xxxxl, height: .xxxl)
                     }
                     
                     ZStack {
@@ -193,8 +193,7 @@ struct NesInputView: View {
                     }
                     .onEnded { value in
                         if input.isPressed(.a) || input.isPressed(.b) {
-                            HapticsService.shared.prepare()
-                            HapticsService.shared.impactOccurred(intensity: 0.5)
+                            HapticsService.shared.impact(intensity: 0.5)
                             input.keyUp(.a)
                             input.keyUp(.b)
                         }
@@ -328,16 +327,14 @@ struct NesInputView: View {
     private func keyDown(key: NESInputKey) {
         if !input.isPressed(key) {
             input.keyDown(key)
-            HapticsService.shared.prepare()
-            HapticsService.shared.impactOccurred()
+            HapticsService.shared.impact()
         }
     }
     
     private func keyUp(key: NESInputKey) {
         if input.isPressed(key) {
             input.keyUp(key)
-            HapticsService.shared.prepare()
-            HapticsService.shared.impactOccurred(intensity: 0.6)
+            HapticsService.shared.impact(intensity: 0.6)
         }
     }
 }

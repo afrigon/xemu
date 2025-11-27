@@ -14,7 +14,9 @@ struct GameBoxView: View {
     @State private var changeArtworkOpen: Bool = false
     @State private var gameDatabaseOpen: Bool = false
     @State private var deleteOpen: Bool = false
-    
+    @State private var manageSavesOpen: Bool = false
+    @State private var iNesDebugOpen: Bool = false
+
     init(game: Game) {
         self.game = game
         _name = State(initialValue: game.name)
@@ -54,6 +56,14 @@ struct GameBoxView: View {
                 changeArtworkOpen = true
             }
             
+            Button("Manage Saves", systemImage: "books.vertical") {
+                manageSavesOpen = true
+            }
+            
+            Button("Cartridge Details", systemImage: "info.circle") {
+                iNesDebugOpen = true
+            }
+
 //            ShareLink(items: [game.data])
             
 #if DEBUG
@@ -115,6 +125,12 @@ struct GameBoxView: View {
         }
         .sheet(isPresented: $gameDatabaseOpen) {
             GameDatabaseReleasesView(game: game)
+        }
+        .sheet(isPresented: $manageSavesOpen) {
+            GameSaveListView(game: game)
+        }
+        .sheet(isPresented: $iNesDebugOpen) {
+            iNesDebugView(game: game)
         }
         .alert("Rename Game", isPresented: $renameOpen) {
             TextField("Name", text: $name)

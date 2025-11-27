@@ -29,6 +29,7 @@ struct SettingsView: View {
                 
                 Section("Advanced") {
                     Toggle("Show FPS", isOn: $showFPS)
+                        .textStyle(.body(.l, .bold))
                 }
             }
             .title("Settings", displayMode: .inline)

@@ -11,6 +11,8 @@ struct NESView: View {
     @Environment(\.scenePhase) var scenePhase
     
     private let game: Data
+    private let saveData: Data?
+
     private let palette: [SIMD3<Float>]
     private let nes: NES
     private let audio: AudioService?
@@ -24,10 +26,12 @@ struct NESView: View {
         isRunning: Binding<Bool>,
         nes: NES = .init(),
         game: Data,
+        saveData: Data?,
         palette: Palette
     ) {
         self._isRunning = isRunning
         self.game = game
+        self.saveData = saveData
         self.palette = stride(from: 0, to: palette.data.count, by: 3)
             .map {
                 SIMD3(
@@ -75,7 +79,7 @@ struct NESView: View {
         .frame(maxHeight: .infinity, alignment: .center)
         .onAppear {
             do throws(XemuError) {
-                try nes.load(program: game)
+                try nes.load(program: game, saveData: saveData)
                 nes.reset()
                 focused = true
                 isRunning = true

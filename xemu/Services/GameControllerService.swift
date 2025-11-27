@@ -1,7 +1,7 @@
 import GameController
 
 class GameControllerService {
-    static let shared = GameControllerService()
+    @MainActor static let shared = GameControllerService()
     
     var controllers: [GCController] = []
     

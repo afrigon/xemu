@@ -34,6 +34,8 @@ enum RetroFontSize {
 }
 
 extension Font {
+    
+    @MainActor
     static func retro(size: RetroFontSize, weight: Font.Weight = .regular) -> Font {
         .monaspace(size: size.value, weight: weight)
     }

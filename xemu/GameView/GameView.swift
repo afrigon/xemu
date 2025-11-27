@@ -57,15 +57,12 @@ struct GameView: View {
                     isRunning: $isRunning,
                     nes: emulator,
                     game: game.data,
+                    saveData: game.save?.data,
                     palette: .default
                 )
     #if os(tvOS)
                 .ignoresSafeArea(edges: .top)
     #endif
-                
-//                if !isRunning {
-//                    createPauseOverlay()
-//                }
                 
     #if os(iOS)
                 if horizontalSizeClass == .regular {
@@ -83,6 +80,30 @@ struct GameView: View {
     #endif
         }
         .ignoresSafeArea()
+        .onChange(of: isRunning) {
+            // only save when pausing, triggered when going to menu or sending the app to background
+            guard !isRunning else {
+                return
+            }
+            
+            guard let saveData = emulator.saveData, !saveData.isEmpty else {
+                return
+            }
+            
+            if let save = game.save {
+                save.data = Data(saveData)
+                save.screenshot = Data(emulator.frameBuffer)
+            } else {
+                let save = GameSave(
+                    game: game,
+                    data: Data(saveData),
+                    screenshot: Data(emulator.frameBuffer)
+                )
+                
+                game.saves.append(save)
+                game.currentSave = save.id
+            }
+        }
         .sheet(isPresented: Binding(
             get: {
                 !isRunning
@@ -94,29 +115,9 @@ struct GameView: View {
             GameMenuView(
                 isRunning: $isRunning,
                 name: game.name,
-                emulator: emulator
+                emulator: emulator,
+                game: game
             )
         }
-    }
-    
-    @ViewBuilder
-    private func createPauseOverlay() -> some View {
-        Button(action: {
-            isRunning = true
-        }, label: {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .ignoresSafeArea()
-                .overlay {
-                    VStack(spacing: .s) {
-                        Image(systemName: "pause.circle.fill")
-                            .font(.system(size: .xxxl, weight: .bold))
-                        
-                        Text("Paused")
-                            .retroTextStyle(size: .xl, weight: .bold)
-                    }
-                }
-                .transition(.opacity)
-        })
     }
 }

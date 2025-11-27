@@ -25,7 +25,7 @@ class ClipboardService {
         }
     }
     
-    static var shared = ClipboardService()
+    @MainActor static let shared = ClipboardService()
     
     static var canUseClipboard: Bool {
 #if os(iOS) || os(visionOS) || targetEnvironment(macCatalyst) || os(macOS)

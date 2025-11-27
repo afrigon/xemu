@@ -4,7 +4,7 @@ import Testing
 @MainActor
 struct MapperMMC1Tests {
     func createMapper() -> MapperMMC1 {
-        .init(pgrrom: .init(count: 0), chrrom: .init(count: 0), sram: .init(count: 0))
+        .init(prgrom: .init(count: 0), chrrom: .init(count: 0), sram: .init(count: 0))
     }
     
     @Test func registers_initial_state() async throws {
@@ -14,7 +14,7 @@ struct MapperMMC1Tests {
         #expect(mapper.control == 0x0C)
         #expect(mapper.chrbank0 == 0)
         #expect(mapper.chrbank1 == 0)
-        #expect(mapper.pgrbank == 0)
+        #expect(mapper.prgbank == 0)
     }
     
     @Test func consecutive_writes_are_ignored() async throws {
@@ -83,7 +83,7 @@ struct MapperMMC1Tests {
         #expect(mapper.control == 0x00)
         #expect(mapper.chrbank0 == 0)
         #expect(mapper.chrbank1 == 0)
-        #expect(mapper.pgrbank == 0)
+        #expect(mapper.prgbank == 0)
         #expect(mapper.shift == 0b1000_0000)
     }
     
@@ -103,7 +103,7 @@ struct MapperMMC1Tests {
         #expect(mapper.control == 0x0C)
         #expect(mapper.chrbank0 == 0b0001_1111)
         #expect(mapper.chrbank1 == 0)
-        #expect(mapper.pgrbank == 0)
+        #expect(mapper.prgbank == 0)
         #expect(mapper.shift == 0b1000_0000)
     }
     
@@ -123,11 +123,11 @@ struct MapperMMC1Tests {
         #expect(mapper.control == 0x0C)
         #expect(mapper.chrbank0 == 0)
         #expect(mapper.chrbank1 == 0b0001_0101)
-        #expect(mapper.pgrbank == 0)
+        #expect(mapper.prgbank == 0)
         #expect(mapper.shift == 0b1000_0000)
     }
     
-    @Test func write_to_pgr_bank_register() async throws {
+    @Test func write_to_prg_bank_register() async throws {
         let mapper = createMapper()
         
         mapper.cpuWrite(0x00, at: 0xFFFF)
@@ -143,7 +143,7 @@ struct MapperMMC1Tests {
         #expect(mapper.control == 0x0C)
         #expect(mapper.chrbank0 == 0)
         #expect(mapper.chrbank1 == 0)
-        #expect(mapper.pgrbank == 0b0000_1100)
+        #expect(mapper.prgbank == 0b0000_1100)
         #expect(mapper.shift == 0b1000_0000)
         #expect(mapper.sramEnabled == true)
     }

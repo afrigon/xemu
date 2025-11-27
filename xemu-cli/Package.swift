@@ -10,14 +10,12 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "XemuLib", path: "../xemu-lib"),
-        .package(url: "https://github.com/afrigon/Prism", branch: "main")
     ],
     targets: [
         .executableTarget(
             name: "XemuCLI",
             dependencies: [
                 "Clibedit",
-                .product(name: "Prism", package: "Prism"),
                 .product(name: "XemuAsm", package: "XemuLib"),
                 .product(name: "XemuCore", package: "XemuLib"),
                 .product(name: "XemuDebugger", package: "XemuLib"),

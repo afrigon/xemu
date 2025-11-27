@@ -4,6 +4,8 @@ import XemuCore
 import XemuFoundation
 
 class OpenVGDBService {
+    
+    @MainActor
     static let shared = OpenVGDBService()
     
     private var db: OpaquePointer?

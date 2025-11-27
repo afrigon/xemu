@@ -8,7 +8,7 @@ public final class MockSystem: BusDelegate {
     let cpu: MOS6502
     let bus: Bus = .init()
     var wram: Memory = .init(count: 0x0800)
-    var cartridge: Cartridge? = nil
+    var mapper: Mapper? = nil
     
     public var cycles: u64 {
         cpu.cycles
@@ -43,7 +43,7 @@ public final class MockSystem: BusDelegate {
     }
 
     func bus(bus: Bus, didSendReadSignalAt address: u16) -> u8? {
-        let mappedData = cartridge?.cpuRead(at: address) ?? bus.openBus
+        let mappedData = mapper?.cpuRead(at: address) ?? bus.openBus
         
         switch address {
             case 0x0000..<0x2000:
@@ -56,7 +56,7 @@ public final class MockSystem: BusDelegate {
     }
     
     func bus(bus: Bus, didSendDebugReadSignalAt address: u16) -> u8? {
-        let mappedData = cartridge?.cpuDebugRead(at: address) ?? bus.openBus
+        let mappedData = mapper?.cpuDebugRead(at: address) ?? bus.openBus
         
         switch address {
             case 0x0000..<0x2000:
@@ -69,7 +69,7 @@ public final class MockSystem: BusDelegate {
     }
     
     func bus(bus: Bus, didSendWriteSignalAt address: u16, _ data: u8) {
-        cartridge?.cpuWrite(data, at: address)
+        mapper?.cpuWrite(data, at: address)
         
         switch address {
             case 0x0000..<0x2000:
@@ -89,7 +89,8 @@ public final class MockSystem: BusDelegate {
     
     public func load(program: Data, saveData: Data? = nil) throws(XemuError) {
         let iNes = try iNesFile(program)
-        cartridge = Cartridge(from: iNes, saveData: saveData)
+        mapper = Mapper.create(rom: iNes, saveData: saveData)
+        mapper?.bus = self.bus
     }
     
     public func powerCycle() {

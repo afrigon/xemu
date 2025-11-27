@@ -1,10 +1,6 @@
 import SwiftUI
 import stylx
 
-class HapticsService {
-    static let shared = UIImpactFeedbackGenerator(style: .light)
-}
-
 struct StateButton<Label: View>: View{
     @Binding var isPressed: Bool
     let label: () -> Label
@@ -21,19 +17,16 @@ struct StateButton<Label: View>: View{
                                            value.location.y >= 0 && value.location.y <= geometry.size.height
                             
                             if isInside && !isPressed {
-                                HapticsService.shared.prepare()
-                                HapticsService.shared.impactOccurred(intensity: 1.0)
+                                HapticsService.shared.impact()
                                 isPressed = true
                             } else if !isInside && isPressed {
-                                HapticsService.shared.prepare()
-                                HapticsService.shared.impactOccurred(intensity: 0.5)
+                                HapticsService.shared.impact(intensity: 0.5)
                                 isPressed = false
                             }
                         }
                         .onEnded { value in
                             if isPressed {
-                                HapticsService.shared.prepare()
-                                HapticsService.shared.impactOccurred(intensity: 0.5)
+                                HapticsService.shared.impact(intensity: 0.5)
                                 isPressed = false
                             }
                         }

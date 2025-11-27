@@ -13,6 +13,12 @@ struct XemuApp: App {
                 }
 #endif
         }
-        .modelContainer(for: Game.self, isAutosaveEnabled: true)
+        .modelContainer(
+            for: [
+                Game.self,
+                GameSave.self
+            ],
+            isAutosaveEnabled: true
+        )
     }
 }

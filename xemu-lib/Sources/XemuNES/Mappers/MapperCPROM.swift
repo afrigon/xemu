@@ -1,9 +1,9 @@
 import Foundation
 import XemuFoundation
 
-final class MapperCNROM: Mapper {
+final class MapperCPROM: Mapper {
     override var type: MapperType {
-        .cnrom
+        .cprom
     }
     
     override func getPrgPageSize() -> Int {
@@ -11,7 +11,11 @@ final class MapperCNROM: Mapper {
     }
     
     override func getChrPageSize() -> Int {
-        0x2000
+        0x1000
+    }
+    
+    override func getChrRamSize() -> Int {
+        0x4000
     }
     
     override func initialize() {
@@ -19,9 +23,12 @@ final class MapperCNROM: Mapper {
         
         prgSelect(for: 0, page: 0)
         chrSelect(for: 0, page: 0)
+        setMirroring(.vertical)
     }
     
     override func registerWrite(_ data: u8, at address: u16) {
-        chrSelect(for: 0, page: Int(data))
+        if address >= 0x8000 {
+            chrSelect(for: 1, page: Int(data & 0x03))
+        }
     }
 }

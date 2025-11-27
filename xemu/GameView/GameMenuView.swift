@@ -6,10 +6,12 @@ struct GameMenuView: View {
     
     @Binding var isRunning: Bool
     @State var settingsOpen: Bool = false
+    @State var iNesDebugOpen: Bool = false
     
     let name: String
     let emulator: Emulator?
-    
+    let game: Game?
+
     var body: some View {
         List {
             Section(content: {
@@ -46,6 +48,10 @@ struct GameMenuView: View {
             }
             
             Section {
+                createButton(text: "Cartridge Details", icon: "info.circle") {
+                    iNesDebugOpen = true
+                }
+                
                 createButton(text: "Settings", icon: "gear") {
                     settingsOpen = true
                 }
@@ -57,6 +63,11 @@ struct GameMenuView: View {
         }
         .sheet(isPresented: $settingsOpen) {
             SettingsView()
+        }
+        .sheet(isPresented: $iNesDebugOpen) {
+            if let game {
+                iNesDebugView(game: game)
+            }
         }
     }
     
@@ -86,7 +97,8 @@ struct GameMenuView: View {
     GameMenuView(
         isRunning: .constant(true),
         name: "The Legend of Zelda",
-        emulator: nil
+        emulator: nil,
+        game: nil
     )
     .mockContext()
 }

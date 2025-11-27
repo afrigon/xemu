@@ -10,7 +10,7 @@ public final class NES: Emulator, BusDelegate {
     let ppu: PPU
     
     let bus: Bus = Bus()
-    var cartridge: Cartridge? = nil
+    var mapper: Mapper? = nil
     
     public var controller1 = Controller()
     public var controller2 = Controller()
@@ -24,6 +24,10 @@ public final class NES: Emulator, BusDelegate {
         ppu.frame
     }
     
+    public var saveData: [u8]? {
+        mapper?.saveData
+    }
+
     public var audioBuffer: [f32]? {
         apu.buffer
     }
@@ -52,7 +56,7 @@ public final class NES: Emulator, BusDelegate {
         apu = try container.decode(APU.self, forKey: .apu)
         ppu = try container.decode(PPU.self, forKey: .ppu)
         wram = try container.decode(Memory.self, forKey: .wram)
-        cartridge = try container.decode(Cartridge.self, forKey: .cartridge)
+        mapper = try container.decode(Mapper.self, forKey: .mapper) // TODO: wrap this to allow mapper type
 
         bus.delegate = self
         cpu.bus = bus
@@ -77,7 +81,7 @@ public final class NES: Emulator, BusDelegate {
             return apu.read()
         }
         
-        let mappedData = cartridge?.cpuRead(at: address) ?? bus.openBus
+        let mappedData = mapper?.cpuRead(at: address) ?? bus.openBus
         
         return switch address {
             case 0x0000..<0x2000:
@@ -100,7 +104,7 @@ public final class NES: Emulator, BusDelegate {
             return apu.debugRead()
         }
         
-        let mappedData = cartridge?.cpuDebugRead(at: address) ?? bus.openBus
+        let mappedData = mapper?.cpuDebugRead(at: address) ?? bus.openBus
         
         return switch address {
             case 0x0000..<0x2000:
@@ -119,7 +123,7 @@ public final class NES: Emulator, BusDelegate {
     }
     
     func bus(bus: Bus, didSendWriteSignalAt address: u16, _ data: u8) {
-        cartridge?.cpuWrite(data, at: address)
+        mapper?.cpuWrite(data, at: address)
         
         switch address {
             case 0x0000..<0x2000:
@@ -142,17 +146,18 @@ public final class NES: Emulator, BusDelegate {
     
     func bus(bus: Bus, didSendReadVideoSignalAt address: u16) -> u8? {
         ppu.busAddress = address
-        return cartridge?.ppuRead(at: address)
+        return mapper?.ppuRead(at: address)
     }
     
     func bus(bus: Bus, didSendWriteVideoSignalAt address: u16, _ data: u8) {
         ppu.busAddress = address
-        cartridge?.ppuWrite(data, at: address)
+        mapper?.ppuWrite(data, at: address)
     }
     
     public func load(program: Data, saveData: Data? = nil) throws(XemuError) {
         let iNes = try iNesFile(program)
-        cartridge = Cartridge(from: iNes, saveData: saveData)
+        mapper = Mapper.create(rom: iNes, saveData: saveData)
+        mapper?.bus = self.bus
     }
     
     public func powerCycle() {
@@ -194,7 +199,7 @@ public final class NES: Emulator, BusDelegate {
         case ppu
         case apu
         case wram
-        case cartridge
+        case mapper
     }
 }
 

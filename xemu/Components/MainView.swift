@@ -49,9 +49,9 @@ struct MainView: View {
                context.error = error
             }
         }
-#if DEBUG
+//#if DEBUG
         .gesture(
-            TapGesture(count: 4)
+            TapGesture(count: 6)
                 .onEnded { _ in showDebugDefaultsView = true }
         )
         .sheet(isPresented: $showDebugDefaultsView) {
@@ -66,7 +66,7 @@ struct MainView: View {
                     }
             }
         }
-#endif // if DEBUG
+//#endif
         .environment(context)
         .environment(\.error, ErrorAction(handler: { error in
             context.set(state: .error(error))

@@ -3,6 +3,7 @@ import XemuCore
 import SwiftData
 import XemuFoundation
 
+@MainActor
 class ImportExportService {
     static let shared = ImportExportService()
     
@@ -57,6 +58,7 @@ class ImportExportService {
         let game = Game(
             identifier: identifier,
             name: filename,
+            fileName: url.lastPathComponent,
             data: data,
             system: system
         )

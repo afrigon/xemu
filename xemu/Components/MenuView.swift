@@ -32,20 +32,20 @@ struct MenuView: View {
                 .toolbarTitleDisplayMode(.inline)
                 .scrollEdgeEffectStyle(.soft, for: .top)
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .primaryAction) {
                         Button("Settings", systemImage: "gear") {
                             settingsOpen = true
                         }
                     }
                     
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .primaryAction) {
                         Button("Add Game", systemImage: "plus") {
                             importOpen = true
                         }
                         .disabled(importOpen)
                     }
                     
-                    ToolbarItem(placement: .title) {
+                    ToolbarItem(placement: .principal) {
                         Label(title: {
                             Text(selection.title)
                                 .retroTextStyle(size: .l)
@@ -54,10 +54,12 @@ struct MenuView: View {
                                 .resizable()
                                 .frame(width: .init(.l, tvOS: .xxxl), height: .init(.l, tvOS: .xxxl))
                         })
-                        .padding(.horizontal, .m)
-                        .padding(.vertical, 10)
                         .labelStyle(.titleAndIcon)
+                        .padding(.horizontal, .m)
+#if canImport(UIKit)
+                        .padding(.vertical, 10)
                         .glassEffect(.regular)
+#endif
                     }
                 }
         }

@@ -1,6 +1,8 @@
 import XemuFoundation
 
 protocol BusDelegate: AnyObject {
+    var cycles: u64 { get }
+    
     func setNMI(_ value: Bool)
     func setIRQ(_ value: Bool)
 
@@ -22,6 +24,10 @@ final class Bus {
     var openVideoBus: u8 = 0x00
 
     weak var delegate: BusDelegate!
+    
+    var cycles: u64 {
+        delegate.cycles
+    }
     
     func setNMI(_ value: Bool) {
         delegate.setNMI(value)

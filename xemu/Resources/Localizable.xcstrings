@@ -19,16 +19,31 @@
     "All associated data, such as saves and save states, will also be deleted." : {
 
     },
+    "All save data will be lost forever, make sure you have a backup before deleting important files." : {
+
+    },
     "Are you sure you want to delete this game?" : {
+
+    },
+    "Are you sure you want to delete this save data?" : {
 
     },
     "B" : {
 
     },
+    "Battery" : {
+
+    },
     "Cancel" : {
 
     },
+    "Cartridge Details" : {
+
+    },
     "Change Artwork" : {
+
+    },
+    "Character ROM" : {
 
     },
     "Clear Database" : {
@@ -37,10 +52,19 @@
     "Clipboard" : {
 
     },
+    "Console Type" : {
+
+    },
     "Controllers" : {
 
     },
+    "Copy as Base64" : {
+
+    },
     "Copy MD5 Hash" : {
+
+    },
+    "Data" : {
 
     },
     "Debug Settings" : {
@@ -52,7 +76,22 @@
     "Done" : {
 
     },
+    "Duplicate" : {
+
+    },
     "Error" : {
+
+    },
+    "File" : {
+
+    },
+    "File Name" : {
+
+    },
+    "File Size" : {
+
+    },
+    "File Type" : {
 
     },
     "Game Collection" : {
@@ -76,10 +115,25 @@
     "Load State" : {
 
     },
+    "Manage Saves" : {
+
+    },
+    "Mapper" : {
+
+    },
     "MENU" : {
 
     },
+    "Mirroring" : {
+
+    },
     "Name" : {
+
+    },
+    "New Save" : {
+
+    },
+    "No Battery" : {
 
     },
     "No Games" : {
@@ -91,16 +145,19 @@
     "OK" : {
 
     },
-    "Paused" : {
+    "Power Cycle" : {
 
     },
-    "Power Cycle" : {
+    "Program ROM" : {
 
     },
     "Rename" : {
 
     },
     "Rename Game" : {
+
+    },
+    "Rename Save" : {
 
     },
     "Reset" : {
@@ -134,6 +191,12 @@
 
     },
     "test" : {
+
+    },
+    "This cartridge has no persistent memory. Save data is not available." : {
+
+    },
+    "Trainer" : {
 
     },
     "Xemu" : {

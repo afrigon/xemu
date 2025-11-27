@@ -1,9 +1,9 @@
 import Foundation
 import XemuFoundation
 
-final class MapperNROM: Mapper {
+final class MapperUNROM: Mapper {
     override var type: MapperType {
-        .nrom
+        .unrom
     }
     
     override func getPrgPageSize() -> Int {
@@ -18,8 +18,14 @@ final class MapperNROM: Mapper {
         super.initialize()
         
         prgSelect(for: 0, page: 0)
-        prgSelect(for: 1, page: 1)
+        prgSelect(for: 1, page: -1)
         
         chrSelect(for: 0, page: 0)
+    }
+    
+    override func registerWrite(_ data: u8, at address: u16) {
+        super.registerWrite(data, at: address)
+        
+        prgSelect(for: 0, page: Int(data))
     }
 }
