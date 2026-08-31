@@ -1,0 +1,37 @@
+# Safety rules are errors: they mark code that can crash at runtime.
+opt_in_rules:
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - discouraged_optional_boolean
+  - empty_count
+  - fatal_error_message
+  - unowned_variable_capture
+  - weak_delegate
+  - overridden_super_call
+  - prohibited_super_call
+  - unavailable_function
+  - array_init
+  - contains_over_first_not_nil
+  - first_where
+  - last_where
+  - redundant_nil_coalescing
+  - toggle_bool
+  - yoda_condition
+
+disabled_rules:
+  - line_length
+  - identifier_name
+
+excluded:
+  - .build
+  - .swiftpm
+  - DerivedData
+
+force_cast: error
+force_try: error
+force_unwrapping: error
+implicitly_unwrapped_optional: error
+
+# Must match --indent-case true in .swiftformat, or the two tools fight.
+switch_case_alignment:
+  indented_cases: true
