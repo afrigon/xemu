@@ -1,0 +1,19 @@
+# Set --swift-version to match the repository's swift-tools-version.
+--swift-version 6.3
+
+--indent 4
+--indent-case true
+--max-width 120
+
+--self remove
+--semicolons never
+--else-position same-line
+--guard-else next-line
+--import-grouping testable-last
+--stripunusedargs closure-only
+
+--wrap-arguments before-first
+--wrap-parameters before-first
+--wrap-collections before-first
+
+--disable wrapMultilineStatementBraces
