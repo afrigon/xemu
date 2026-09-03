@@ -4,6 +4,7 @@ import stylx
 struct SettingsView: View {
     @AppStorage(.gameCollectionSorting) private var gameCollectionSorting: GameCollectionSorting = .lastPlayed
     @AppStorage(.showFPS) private var showFPS: Bool = false
+    @AppStorage(.audioVolume) private var audioVolume: Double = 1.0
 
     @Environment(\.dismiss) private var dismiss
     
@@ -18,6 +19,10 @@ struct SettingsView: View {
                     }
                 }
                 
+                Section("Audio") {
+                    Slider(value: $audioVolume, in: 0...1)
+                }
+
                 Section("Game Collection") {
                     Picker("Sort By", selection: $gameCollectionSorting) {
                         Text("Last Played")

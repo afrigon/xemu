@@ -8,6 +8,13 @@ class AudioService {
     let format: AVAudioFormat
     
     var sampleQueue: [f32] = [] // TODO: modify this to handle multiple channels
+    var volume: Float = 1 {
+        didSet {
+            if engine.isRunning {
+                engine.mainMixerNode.outputVolume = volume
+            }
+        }
+    }
 
     init?(sampleRate: Double = 44100, channels: AVAudioChannelCount = 1) {
         let samplesPerSecond = Int(Double(sampleRate) / 60)
@@ -42,7 +49,7 @@ class AudioService {
         try? engine.start()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.engine.mainMixerNode.outputVolume = 1
+            self?.engine.mainMixerNode.outputVolume = self?.volume ?? 1
         }
     }
     
@@ -82,7 +89,7 @@ class AudioService {
         for i in count..<Int(frameCount) {
             channel[i] = channel[count - 1]
         }
-
+        
         sampleQueue.removeFirst(count)
         
         return 0

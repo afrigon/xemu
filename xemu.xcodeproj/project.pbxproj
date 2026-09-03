@@ -34,6 +34,7 @@
 /* Begin PBXFileReference section */
 		AD1C9F082CBDEE0700229258 /* xemu-cli */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "xemu-cli"; sourceTree = "<group>"; };
 		AD2B2DCF2CB7889C00783899 /* xemu-lib */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "xemu-lib"; sourceTree = "<group>"; };
+		AD6D27CD2CDB349300FD54EA /* xemu-runtime */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "xemu-runtime"; sourceTree = "<group>"; };
 		ADDFBCDD2CB4BC79007FAAD3 /* Xemu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Xemu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ADDFBCEE2CB4BC7A007FAAD3 /* XemuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XemuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		ADDFBCF82CB4BC7A007FAAD3 /* XemuUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XemuUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -120,6 +121,7 @@
 		ADDFBCD42CB4BC79007FAAD3 = {
 			isa = PBXGroup;
 			children = (
+				AD6D27CD2CDB349300FD54EA /* xemu-runtime */,
 				AD1C9F082CBDEE0700229258 /* xemu-cli */,
 				ADDFBCDF2CB4BC79007FAAD3 /* xemu */,
 				AD2B2DCF2CB7889C00783899 /* xemu-lib */,

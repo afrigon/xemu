@@ -4,11 +4,12 @@ import XemuCore
 import XemuNES
 
 struct NESView: View {
-    @AppStorage(.showFPS) var showFPS: Bool = false
-
-    @Environment(AppContext.self) var context
-    @Environment(NESInput.self) var input
-    @Environment(\.scenePhase) var scenePhase
+    @Environment(AppContext.self) private var context
+    @Environment(NESInput.self) private var input
+    @Environment(\.scenePhase) private var scenePhase
+    
+    @AppStorage(.showFPS) private var showFPS: Bool = false
+    @AppStorage(.audioVolume) private var volume: Double = 1.0
     
     private let game: Data
     private let saveData: Data?
@@ -78,16 +79,20 @@ struct NESView: View {
         }
         .frame(maxHeight: .infinity, alignment: .center)
         .onAppear {
+            audio?.volume = Float(volume)
+            
             do throws(XemuError) {
                 try nes.load(program: game, saveData: saveData)
-                nes.reset()
-                focused = true
-                isRunning = true
             } catch let error {
                 isRunning = false
                 context.error = error
                 context.set(state: .menu)
+                return
             }
+            
+            nes.reset()
+            focused = true
+            isRunning = true
         }
         .onDisappear {
             audio?.stop()
@@ -99,6 +104,9 @@ struct NESView: View {
             } else {
                 audio?.stop()
             }
+        }
+        .onChange(of: volume) {
+            audio?.volume = Float(volume)
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase != .active {
